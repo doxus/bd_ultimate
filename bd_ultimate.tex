@@ -92,7 +92,7 @@
       \item \textbf{relacje 1..1}
       \item \textbf{relacje n..n}
       \item indeksy
-      \item klucze obce
+      \item klucze obce cycki
       \end{itemize}
 
   \section{Kiedy system zdejmuje blokady}
@@ -358,7 +358,7 @@
   \section*{Nadawanie i odbieranie przywilejów dostępu}
       \subsection*{Do tablic i perspektyw}
       \begin{itemize}
-          \item przywileje może nadawać i odbierać tylko właściciel, DBA lub SYSADM.
+          \item Przywileje może nadawać i odbierać tylko właściciel, DBA lub SYSADM.
           \item Można odebrać tylko przywileje nadane expilicite
       \end{itemize}
 
@@ -398,7 +398,7 @@
       \begin{itemize}
       \item działanie optymalizatora "wybierającego" metodę dostępu na podstawie postaci predykatu w WHERE
       \item dla predykatu wycinającego ileś wierszy (np. Typu “<” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z roziwiązaniami).
-      \item Wstawianie jest szybsze dla cluster hashed.
+      \item Wstawianie jest szybsze dla cluster hashed.asd
       \item 
       \end{itemize}
 
