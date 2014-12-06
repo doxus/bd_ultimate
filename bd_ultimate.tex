@@ -4,9 +4,9 @@
   \usepackage[utf8]{inputenc}
   \usepackage{graphicx}
   \usepackage{amsmath}
-
+  
   \usepackage[unicode, bookmarks=true]{hyperref} %do zakładek
-
+  
   \setlength{\textheight}{24cm}
   \setlength{\textwidth}{15.92cm}
   \setlength{\footskip}{10mm}
@@ -14,397 +14,481 @@
   \setlength{\evensidemargin}{0mm}
   \setlength{\topmargin}{0mm}
   \setlength{\headsep}{5mm}
-
+  
   \setcounter{secnumdepth}{3}	%max numerowany poziom zagniezdzenia
   \setcounter{tocdepth}{3}	%uwzglednienie w spisie tresci
-
+  
   \begin{document}
-  \bibliographystyle{plain}
-
-  \begin{titlepage}
-  \title{\huge Bazy Danych II - ULTIMATE}
-  \author{\large SonMati \\ \large Doxus}
-  \maketitle
-  \end{titlepage}
-
-  %===============================================================================
-  %*** PYTANIA I ODPOWIEDZI ******************************************************
-  %===============================================================================
-  \part*{Pytania i odpowiedzi}
-  % pytanie 1
-  \section{Co to jest ROWID?}
-      \begin{itemize}
-      \item[] \textbf{umożliwia identyfikację rekordu} \emph{tak, bo określa jednoznacznie wiersz w tabeli (a nawet jego wersję)}
-      \item[] \textbf{umożliwia wersjonowanie (wykrywanie modyfikacji)} \emph{tak, bo zmiany rekordu są w nim odnotowywane}
-      \item jest przeznaczony do tworzenia kluczy głównych
-      \item \textbf{jest w każdej tabeli} \emph{tak, bo jest po prostu w każdej tabeli xD}
-      \end{itemize}
-
-  \section{W SQL Base realizacja fazy}
-      \begin{itemize}
-      \item \textbf{prepare - wysyłanie tekstu komendy do servera}
-      \item \textbf{execute - wysłanie zmiennych do servera}
-      \item execute - wypracowanie planu wykonania \emph{??to sobie sam serwer robi, a nie faza zapytania}
-      \item \textbf{prepare - sprawdzenie uprawnień usera do obiektów}
-      \end{itemize}
-
-  \section{W modelu logicznym}
-      \begin{itemize}
-      \item są definicje indeksów
-      \item nie może być związków n..m
-      \item występują klucze obce
-      \item nie mogą wystąpić związki 1..1
-      \end{itemize}
-
-  \section{SQL base na pozimie RL}
-      \begin{itemize}
-      \item blokada w trybie dzielonym wszystkich wierszy odczytanych w bieżącej transakcji \emph{RL nie posiada trwałego S-LOCKa - blokady w trybie dzielonym.}
-      \item blokada w trybie wyłącznym wierszy zmodyfikowanych (chyba też do końca transakcji) \emph{?? RL nie zakłada X-LOCKA - blokady w trybie wyłącznym.}
-      \item \textbf{blokada w trybie dzielonym tylko jednego (ostatnio odczytanego) wiersza do czasu odczytania kolejnych danych} \emph{RL polega na krótkim nałożeniu S-LOCKa na wiersz, odczytaniu danych i zdjęciu go zaraz po odczytcie.}
-      \item umożliwia odczyt danych niezależnie od blokad nałożonych w innych transakcjach \emph{?? RL jest zależne od S-LOCKa.}
-      \end{itemize}
-
-  % pytanie 5    
-  \section{Kiedy serwer bazy danych zdejmuje blokady}
-      \begin{itemize}
-      \item \textbf{po COMMIT} \emph{generalnie trzeba zakończyć transakcję}
-      \item gdy wykonujemy następny CONNECT z aktualnie używanej aplikacji
-      \item w fazie prepare gdy następuje ona po instrukcjach DML
-      \item \textbf{po ROLLBACK} \emph{trzeba zakończyć transakcję}
-      \end{itemize}
-
-  \section{SQL base na pozimie RL}
-      \begin{itemize}
-      \item blokada w trybie dzielonym wszystkich wierszy odczytanych w bieżącej transakcji
-      \item \textbf{blokada w trybie dzielonym zawsze tylko jednego (ostatnio odczytanego) wiersza do czasu odczytania kolejnych danych}
-      \end{itemize}
-
-  \section{Co to jest ROWID: służy m.in.}
-      \begin{itemize}
-      \item do ułatwienia wyszukiwania rekordów
-      \item \textbf{do wykrywania zmian w rekordach} \emph{bo przy zmianie rekordu zastępuje zmiana ROWID, więc różne ROWID tego samego rekordu oznaczają zmianę w jego treści}
-      \item  do nadawania indeksów 
-      \item \textbf{czy jest w każdej tabeli.} \emph{jest w każdej tabeli i tyle}
-      \end{itemize}
-
-  \section{Model logiczny - co występuje, a co nie}
-      \begin{itemize}
-      \item \textbf{relacje 1..1}
-      \item \textbf{relacje n..n}
-      \item indeksy
-      \item klucze obce cycki
-      \end{itemize}
-
-  \section{Kiedy system zdejmuje blokady}
-      \begin{itemize}
-      \item \textbf{commit} \emph{zakończenie transakcji}
-      \item \textbf{rollback} \emph{zakończenie transakcji}
-      \item \textbf{faza prepare następnego zapytania}
-      \item \textbf{nowy connect na tym samym uchwycie} \emph{?? reconnect?}
-      \end{itemize}
-
-  % pytanie 10    
-  \section{W implementacji mechanizmu transakcyjnego w systemie DBMS SQLBase}
-      \begin{itemize}
-      \item \textbf{zwolnienie wszelkich nałożonych blokad w bieżącej transakcji, następuje w sytuacji wykonania polecenia ROLLBACK w bieżącej transakcji}
-      \end{itemize}
-
-  \section{W systemie transakcyjnym DBMS SQLBase}
-      \begin{itemize}
-      \item system podziału transakcji (mechanizm SAVEPOINT- ROLLBACK ) pozwala na wycofywanie i zatwierdzanie fragmentów transakcji
-      \end{itemize}
-
-  \section{Kolumna ROWID w systemie zarządzania bazą danych SQLBase}
-      \begin{itemize}
-      \item \textbf{jest kolumną dostępną w każdej tabeli}
-      \end{itemize}
-
-  \section{Określ prawdziwość zdań dotyczących realizacja fazy zapytania/zdania SQL w systemie zarządzania bazą danych SQLBase}
-      \begin{itemize}
-      \item \textbf{faza Execute powoduje przesłanie wartości zmiennych wiążących – wartości parametrów komendy SQL}
-      \end{itemize}
-
-
-  %===============================================================================
-  %*** MATERIAŁY WYKŁADOWE *******************************************************
-  %===============================================================================
-  \part*{Podstawy}
-  \section*{Podstawowe pojęcia}
-      \begin{itemize}
-      \item \textbf{Strona} - Data Row Page.
-      \item \textbf{Tablica} - dwukierunkowa lista stron.
-      \item \textbf{Slot} - miejsce, gdzie może leżeć wiersz.
-          \begin{itemize}
-          \item Mogą to być różne pozycje, ponieważ długość wiersza nie jest zdefiniowana.
-          \item Jeżeli strona nie jest w pełni wypełniona, zostają puste miejsca.
-          \item Są numerowane, każdy posida Update Number.
-          \item Każdy posiada wskaźnik do extentu (osobny typ strony).
-          \end{itemize}
-      \item \textbf{Header} - zawiera informacje o slotach.
-      \item \textbf{Footer} - suma kontrolna (CRC, bit parzystości, klucz, szyfrowanie). \emph do uzupełnienia
-      \end{itemize}
-
-  % --- kolumny ROWID
-  \part*{Kolumny ROWID}
-  \section*{Co to jest?}
-      Unikalna identyfikacja każdego wiersza, wartości w kolumnie ROWID jednoznacznie identyfikują wiersz w tablicy.ROWID definiujemy jako
-
-  \section*{Właściwości}
-      \begin{itemize}
-      \item Każda tablica posiada domyślnie kolumnę ROWID (obsługiwaną przez serwer bazy danych), którą można odczytywać w ramach wykonywania komend SELECT, UPDATE, DELETE
-      \item Po zmianie jakiejkolwiek wartości w wierszu następuje zmiana wartości ROWID (z zachowaniem unikalności w ramach tablicy) – versioning
-      \item Budowa ROWID: identyfikator powstaje na skutek sklejenia odpowiednich wartości: page number, slot number, row serial number (insert sn), update serial number
-        \begin{center}
-        \(ROWID = PageNumber  + InsertNumber + SlotNumber + UpdateNumber\)
-        \end{center}
-      \item Mimo to jest typu STRING i można go używać w zdaniach SQL tak jak nazwy kolumny
-      \item Zmienia wartość po każdej zmianie wiersza - należy korzystać z nich ostrożnie, zwłaszcza w formularzach \emph{master-detail}
-      \end{itemize}
-  \section*{Wykorzystanie}
-      \begin{itemize}
-      \item Ponieważ ROWID jednoznacznie identyfikuje wiersz, wykorzystuje się go przy tworzeniu wynikowej tablicy dla zapytań (Result Set)
-      \item W wypadku, kiedy zapytanie wymaga złączenia kilku tablic
-      \item Do koordynacji działania dwóch kursorów
-      \end{itemize}
-
-  % ======================================================================
-  % === POZIOMY IZOLACJI
-  % ======================================================================
-  \part*{Poziomy izolacji oraz blokady}
-
-
-  \section*{Co to jest?}
-      Mechanizm, który umożliwia wielodostęp poprzez zastosowanie izolacji oraz blokad.
-
-  % --- właściwości izolacji
-  \section*{Właściwości}
-      \begin{itemize}
-      \item Ustawienie poziomu izolacji decyduje o sposobie izolowania i blokowania danych 
-      \item Dla aplikacji istotnie wielodostępnych poziomy izolacji muszą być dobrane do okoliczności 
-      \item Blokowanie zapisu następuje na poziomie stron 
-      \item Blokady są zwalniane po COMMIT / ROLLBACK 
-      \item Poziomy izolacji ustala się:
-      \begin{itemize}
-          \item Poleceniem \emph{SET ISOLATION 'poziom'} w SQLTalk 
-          \item Funkcją \emph{SqlSetIsolationLevel} w SQLWindows
-      \end{itemize}
-      \item Każdy kursor otwarty przez klienta ma własny bufor wejściowy
-      \end{itemize}
-
-  % --- blokady
-  \section*{Blokady}				
-      \begin{itemize}
-      \item \textbf{S-LOCK} - blokada w trybie dzielonym (shared), współdzielenie odczytu – każda transakcja może zablokować wybrany wiersz (rekord) i go odczytywać, Jeżeli chce go zmodyfikować, musi podnieść poziom blokady na X-LOCK, ale wtedy musi poczekać, aż inne transakcje zdejmą swoje S-LOCKi.
-      \item \textbf{X-LOCK} - blokada w trybie wyłącznym, przejęcie wiersza (rekordu) na własność – można czytać, modyfikować, ale inne transakcje nie mają dostępu do tych danych.
-      \item \textbf{U-LOCK} - Update (upgrade) lock. Może być tylko jeden na strone (podobnie jak X-LOCK). Transakcja (A) przejmuje dane na wyłączność, ale inne transakcje (B, C, D) mogą zakładać na nie S-LOCKi i odczytywać. \\ Jeśli A chce modyfikować dane, musi podnieść poziom blokady na X-LOCK, ale musi poczekać na zdjęcie przez pozostałe (B, C, D) blokad S-LOCK. U-LOCK daje A tą przewagę, że ona jako pierwsza będzie modyfikować dane, bo nikt inny nie założy X-LOCKa – bo U-LOCK blokuje strone.
-      \end{itemize}
-
-  % --- poziomy izolacji
-  \section*{Poziomy izolacji}
-      \begin{itemize}
-          \item \textbf{RO} (\emph{Read Only})
-          \begin{itemize}
-              \item Nie ma S-LOCKa.
-              \item Tworzy się “select snapshot”.
-              \item Odczytuje się dane spojne w danej chwil.
-              \item Innymi słowy - nie zakłada żadnych blokad, ale nie pozwala na modyfikacje.
-              \item Poziom przeznaczony do odczytów, które muszą zawierać dane z tej samej chwili.
-              \item Możliwość użycia tego trybu trzeba odblokować przez \emph{SET READONLY ON}
-              \item Przekazuje „migawkę" danych z chwili zadania zapytania.
-              \item Używa specjalnych plików .HIS do przechowywania migawki.
-          \end{itemize}
-          \item \textbf{RL} (\emph{Release Lock})
-          \begin{itemize}
-              \item Wypełnia bufor wejściowy danymi.
-              \item Zakłada blokadę na stronę na której jest kursor.
-              \item Zwalnia blokadę natychmiast po zakończeniu operacji.
-              \item Zapewnia dobry wielodostęp.
-              \item Poziom przeznaczony do pokazywania wielu wierszy.
-              \item Nie ma S-LOCKa, ale w praktyce DBMS zakłada go na chwilę, odczytuje spójne dane, a następnie zwalnia.
-          \end{itemize}
-          \item \textbf{CS} (\emph{Cursor Stability})
-          \begin{itemize}
-              \item Pobiera do bufora tylko pojedynczy wiersz.
-              \item Blokowana jest tylko „bieżąca" strona - ta na której jest kursor.
-              \item Blokada jest zdejmowana gdy kursor przejdzie na inną stronę.
-              \item Dane między kolejnymi odczytami mogą być zmienione przez innych użytkowników.             \item Generuje duży ruch na sieci, ale nie blokuje dostępu innym.
-              \item Poziom przeznaczony do zmian pojedynczych wierszy.
-              \item Wykorzystywane przy wybieraniu wierszy do modyfikacji ( użytkownik je sobie przegląda w aplikacji i wprowadza zmiany, a poźniej zapisuje ). S-LOCK, U-LOCK, X-LOCK.
-          \end{itemize}
-          \item \textbf{RR} (\emph{Repetable Read})
-          \begin{itemize}
-              \item Wypełnia bufor wejściowy danymi.
-              \item Wszystkie przeczytane strony zostają zablokowane.
-              \item Gwarantuje powtarzalność odczytów wiersza w ramach transakcji.
-              \item Jest to domyślny poziom izolacji.
-              \item Pełne blokowanie S-LOCK, U-LOCK, X-LOCK.
-          \end{itemize}
-      \end{itemize}
-
-
-  % --- Fazy realizacji zapytania SQL
-  \part*{Fazy realizacji zapytania SQL}
-      \begin{itemize}
-      \item \textbf{Faza PREPARE}		% === PREPARE ===
-          \begin{itemize}
-          \item Przesłanie komendy do serwera
-          \item Analiza syntaktyczna
-          \item Sprawdzanie istnienia obiektów (tablice, perspektywy, kolumny)
-          \item Sprawdzenie uprawnień (poziom uprawnień do operowania na zawartościach tabel)
-          \item Podstawienia (np. zastąpienie perspektyw, synonimów)
-              \begin{itemize}
-              \item Pobranie statystyk z katalogu systemowego
-              \item Analiza możliwych ścieżek realizacji wyszukiwania (access path)
-              \item Wybór ścieżki o najniższym koszcie wykonania (SQL cost)
-              \end{itemize}
-          \item Tłumaczenie na ciąg wywołań wykonywalnych modułów
-          \end{itemize}
-      \item \textbf{Faza EXECUTE}		% === EXECUTE ===
-          \begin{itemize}
-          \item Wysłanie zmiennych wiążących (bind variables)
-          \item Wykonanie komendy (rozpoczęcie tworzenia zbioru \emph{result set})
-          \end{itemize}
-      \item \textbf{Faza FETCH}		% === FETCH ===
-          \begin{itemize}
-          \item pobieranie wierszy rozwiązania (każdy “FETCH” to pobranie wiersza ze zbioru \emph{result set})
-          \end{itemize}
-      \end{itemize}
-
-
-  % ===================================================================
-  % === ZARZĄDZANIE DOSTĘPEM
-  % ===================================================================
-  \part*{Zarządzanie dostępem}
-
-  % --- Autoryzacja
-  \section*{Autoryzacja}
-      \begin{itemize}
-      \item Użytkownicy są identyfikowani przez nazwy i hasła 
-      \item Identyfikator \textbf{PUBLIC} używany jest do przyznania przywilejów dla wszystkich użytkowników
-      \end{itemize}
-
-  % --- Poziomy uprawnień i róznice między nimi
-  \section*{Poziomy uprawnień i róznice między nimi}
-      \begin{itemize}
-          \item \textbf{SYSADM}
-          \begin{itemize}
-              \item Pełna kontrola nad całą bazą.
-              \item Potrafi wszytsko, zarządza użytkownikami, hasłami i poziomami uprzywilejowania.
-              \item Jest tylko jeden - nie można utworzyć nowych \emph{sysadmów}.
-              \item Jako jedyny może tworzyć nowych użytkowników.
-          \end{itemize}
-          \item \textbf{DBA}
-          \begin{itemize}
-              \item Pełny dostęp do bazy.
-              \item Zarządzanie przywilejami - może przyznawać i odbierać prawa do obiektów.
-          \end{itemize}
-          \item \textbf{RESOURCE}
-          \begin{itemize}
-              \item Tworzenie i usuwanie stworzonych przez siebie tablic.
-              \item Odbieranie i nadawanie praw do ww. tablic innym użytkownikom.
-          \end{itemize}
-          \item \textbf{CONNECT}
-          \begin{itemize}
-              \item Połączenie z bazą danych.
-              \item Operacje na tablicach do których ma odpowienie uprawnienia.
-              \item Tworzenie synonimów.
-              \item Dostęp tylko według przyznanych przywilejów.
-          \end{itemize}
-      \end{itemize}
-
-  % --- Przywileje
-  \section*{Przywileje dostępu}
-      \begin{itemize}
-          \item Wyszukiwanie (\emph{SELECT}) 
-          \item Zmiana danych (\emph{INSERT}, \emph{DELETE}, \emph{UPDATE}), można określić dostęp do kolumn 
-          \item Zmiana struktury (\emph{ALTER}) 
-          \item Tworzenie i usuwanie indeksów (\emph{INDEX})
-          \item Właściciel tablicy ma do niej wszystkie prawa
-      \end{itemize}
-
-  % --- Prawa do obiektów bazy danych
-  % === DO UZUPEŁNIENIA ==============
-  \section*{Prawa do obiektów bazy danych}
-      \begin{itemize}
-      \item Prawa do obiektów bazy danych (tablica, perspektywa, procedura bazy danych)
-      \item Sposób nadawania uprawnień do obiektów (np. przykrywanie poprzez synonimy publiczne i prywatne)
-      \item Tablic przez perspektywy dla określonych użytkowników
-      \item Możliwość wykonywania procedur z prawami twórcy)
-      \end{itemize}
-
-  % --- Zabezpieczenie serwera
-  \section*{Zabezpieczenie serwera}
-      \begin{itemize}
-      \item Komenda \emph{SET SERVER nazwa\_serwera / hasło\_serwera} jest konieczna do wykonania operacji na serwerze:
-          \begin{itemize}
-          \item Backup i restore 
-          \item Tworzenie oraz kasowanie baz i dzienników 
-          \item Instalacja oraz deinstalacja bazy danych
-          \end{itemize}
-      \end{itemize}
-
-  % --- Synonimy i perspektywy
-  \section*{Synonimy i perspektywy}
-      \begin{itemize}
-          \item Dla ułatwienia dostępu do obiektów utworzonych przez innego użytkownika można definiować synonimy poleceniem:
-  \center{\emph{CREATE} [\emph{PUBLIC}] \emph{SYNONYM} synonim \emph{FOR} uid.tabela}
-          \begin{itemize}
-              \item Istnienie publicznego synonimu nie oznacza publicznych praw dostępu! 
-              \item Do selektywnego udostępniania tabel można używać perspektyw, w przypadku przywilejów umożliwiających zmiany warto użyć perspektyw \emph{WITH CHECK OPTION}
-          \end{itemize}
-      \end{itemize}
-
-  % --- Nadawanie i odbieranie przywilejów dostępu
-  \section*{Nadawanie i odbieranie przywilejów dostępu}
-      \subsection*{Do tablic i perspektyw}
-      \begin{itemize}
-          \item Przywileje może nadawać i odbierać tylko właściciel, DBA lub SYSADM.
-          \item Można odebrać tylko przywileje nadane expilicite
-      \end{itemize}
-
-
-  % ==========================================================================
-  % === Sposoby zarządzania dostępem 
-  % ==========================================================================
-  \part*{Sposoby zarządzania dostępem}
-
-  % --- SQL
-  \section*{W SQL}
-      \begin{itemize}
-          \item Tworzenie użytkowników i nadawanie poziomów dostępu\\\\
-          \centerline{\emph{GRANT CONNECT}|\emph{RESOURCE}|\emph{DBA TO} uid \emph{IDENTIFIED BY} passwd;}
-          \item Usuwanie użytkowników\\\\ \centerline{\emph{REVOKE CONNECT}|\emph{RESOURCE}|\emph{DBA FROM} uid;}
-          \item Przyznawanie przywilejów dostępu do tabeli lub\\\\ \centerline{\emph{GRANT ALL} | lista\_przywilejów \emph{ON} nazwa \emph{TO} uid | \emph{PUBLIC} }
-          \item Przywilej \emph{UPDATE} może dotyczyć tylko wybranych kolumn\\\\ \centerline{\emph{UPDATE} ( lista\_kolumn ) }
-          \item Odbieranie przywilejów\\\\ \centerline{\emph{REVOKE ALL} | lista\_przywilejów \emph{FROM} uid | \emph{PUBLIC}}
-          \item Użytkowników i przywileje można oglądać przez perspektywy:
-          \begin{itemize}
-              \item \emph{SYSUSERAUTH}
-              \item \emph{SYSTABAUTH}
-              \item \emph{SYSCOLAUTH}
-          \end{itemize}
-      \end{itemize}
-
-  % --- Różnice pomiędzy modelem logicznym i fizycznym bazy danych
-  % === DO UZUPEŁNIENIA ==============
-  \section*{Różnice pomiędzy modelem logicznym i fizycznym bazy danych}
-      \begin{itemize}
-      \item W modelu fizycznym pracyjemy już na konkretnych tablicach, następuje migracja kluczy obcych, w logicznym występują encje.
-      \end{itemize}
-
-  % --- Różnice w dostępie do danych za pośrednictwem indeksów B+tree i cluster hashed w SQLBase
-  % === DO UZUPEŁNIENIA ==============
-  \section*{Różnice w dostępie do danych za pośrednictwem indeksów B+tree i cluster hashed w SQLBase}
-      \begin{itemize}
-      \item działanie optymalizatora "wybierającego" metodę dostępu na podstawie postaci predykatu w WHERE
-      \item dla predykatu wycinającego ileś wierszy (np. Typu “<” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z roziwiązaniami).
-      \item Wstawianie jest szybsze dla cluster hashed.asd
-      \item 
-      \end{itemize}
-
-  % === 
-
-  %===============================================================================	
-  %*******************************************************************************
-  %===============================================================================
+  	\bibliographystyle{plain}
+  	
+  	\begin{titlepage}
+  		\title{\huge Bazy Danych II - ULTIMATE}
+  		\author{\large SonMati \\ \large Doxus}
+  		\maketitle
+  	\end{titlepage}
+  	
+  	%===============================================================================
+  	%*** PYTANIA I ODPOWIEDZI ******************************************************
+  	%===============================================================================
+  	\part*{Pytania i odpowiedzi}
+  	% pytanie 1
+  	\section{Co to jest ROWID?}
+  	\begin{itemize}
+  		\item[] \textbf{umożliwia identyfikację rekordu} \emph{tak, bo określa jednoznacznie wiersz w tabeli (a nawet jego wersję)}
+  		\item[] \textbf{umożliwia wersjonowanie (wykrywanie modyfikacji)} \emph{tak, bo zmiany rekordu są w nim odnotowywane}
+  		\item jest przeznaczony do tworzenia kluczy głównych
+  		\item \textbf{jest w każdej tabeli} \emph{tak, bo jest po prostu w każdej tabeli xD}
+  	\end{itemize}
+  	
+  	\section{W SQL Base realizacja fazy}
+  	\begin{itemize}
+  		\item \textbf{prepare - wysyłanie tekstu komendy do servera}
+  		\item \textbf{execute - wysłanie zmiennych do servera}
+  		\item execute - wypracowanie planu wykonania \emph{??to sobie sam serwer robi, a nie faza zapytania}
+  		\item \textbf{prepare - sprawdzenie uprawnień usera do obiektów}
+  	\end{itemize}
+  	
+  	\section{W modelu logicznym}
+  	\begin{itemize}
+  		\item są definicje indeksów
+  		\item nie może być związków n..m
+  		\item występują klucze obce
+  		\item nie mogą wystąpić związki 1..1
+  	\end{itemize}
+  	
+  	\section{SQL base na pozimie RL}
+  	\begin{itemize}
+  		\item blokada w trybie dzielonym wszystkich wierszy odczytanych w bieżącej transakcji \emph{RL nie posiada trwałego S-LOCKa - blokady w trybie dzielonym.}
+  		\item blokada w trybie wyłącznym wierszy zmodyfikowanych (chyba też do końca transakcji) \emph{?? RL nie zakłada X-LOCKA - blokady w trybie wyłącznym.}
+  		\item \textbf{blokada w trybie dzielonym tylko jednego (ostatnio odczytanego) wiersza do czasu odczytania kolejnych danych} \emph{RL polega na krótkim nałożeniu S-LOCKa na wiersz, odczytaniu danych i zdjęciu go zaraz po odczytcie.}
+  		\item umożliwia odczyt danych niezależnie od blokad nałożonych w innych transakcjach \emph{?? RL jest zależne od S-LOCKa.}
+  	\end{itemize}
+  	
+  	% pytanie 5    
+  	\section{Kiedy serwer bazy danych zdejmuje blokady}
+  	\begin{itemize}
+  		\item \textbf{po COMMIT} \emph{generalnie trzeba zakończyć transakcję}
+  		\item gdy wykonujemy następny CONNECT z aktualnie używanej aplikacji
+  		\item w fazie prepare gdy następuje ona po instrukcjach DML
+  		\item \textbf{po ROLLBACK} \emph{trzeba zakończyć transakcję}
+  	\end{itemize}
+  	
+  	\section{SQL base na pozimie RL}
+  	\begin{itemize}
+  		\item blokada w trybie dzielonym wszystkich wierszy odczytanych w bieżącej transakcji
+  		\item \textbf{blokada w trybie dzielonym zawsze tylko jednego (ostatnio odczytanego) wiersza do czasu odczytania kolejnych danych}
+  	\end{itemize}
+  	
+  	\section{Co to jest ROWID: służy m.in.}
+  	\begin{itemize}
+  		\item do ułatwienia wyszukiwania rekordów
+  		\item \textbf{do wykrywania zmian w rekordach} \emph{bo przy zmianie rekordu zastępuje zmiana ROWID, więc różne ROWID tego samego rekordu oznaczają zmianę w jego treści}
+  		\item  do nadawania indeksów 
+  		\item \textbf{czy jest w każdej tabeli.} \emph{jest w każdej tabeli i tyle}
+  	\end{itemize}
+  	
+  	\section{Model logiczny - co występuje, a co nie}
+  	\begin{itemize}
+  		\item \textbf{relacje 1..1}
+  		\item \textbf{relacje n..n}
+  		\item indeksy
+  		\item klucze obce
+  	\end{itemize}
+  	
+  	\section{Kiedy system zdejmuje blokady}
+  	\begin{itemize}
+  		\item \textbf{commit} \emph{zakończenie transakcji}
+  		\item \textbf{rollback} \emph{zakończenie transakcji}
+  		\item \textbf{faza prepare następnego zapytania}
+  		\item \textbf{nowy connect na tym samym uchwycie} \emph{?? reconnect?}
+  	\end{itemize}
+  	
+  	% pytanie 10    
+  	\section{W implementacji mechanizmu transakcyjnego w systemie DBMS SQLBase}
+  	\begin{itemize}
+  		\item \textbf{Zwolnienie wszelkich nałożonych blokad w bieżącej transakcji, następuje w sytuacji wykonania polecenia ROLLBACK w bieżącej transakcji}
+  	\end{itemize}
+  	
+  	\section{W systemie transakcyjnym DBMS SQLBase}
+  	\begin{itemize}
+  		\item System podziału transakcji (mechanizm SAVEPOINT- ROLLBACK ) pozwala na wycofywanie i zatwierdzanie fragmentów transakcji
+  	\end{itemize}
+  	
+  	\section{Kolumna ROWID w systemie zarządzania bazą danych SQLBase}
+  	\begin{itemize}
+  		\item \textbf{Jest kolumną dostępną w każdej tabeli}
+  	\end{itemize}5
+  	
+  	\section{Określ prawdziwość zdań dotyczących realizacja fazy zapytania/zdania SQL w systemie zarządzania bazą danych SQLBase}
+  	\begin{itemize}
+  		\item \textbf{Faza Execute powoduje przesłanie wartości zmiennych wiążących – wartości parametrów komendy SQL}
+  	\end{itemize}
+  	
+  	
+  	%===============================================================================
+  	%*** MATERIAŁY WYKŁADOWE *******************************************************
+  	%===============================================================================
+  	\part*{Podstawy}
+  	\section*{Podstawowe pojęcia}
+  	\begin{itemize}
+  		\item \textbf{Strona} - Data Row Page.
+  		\item \textbf{Tablica} - dwukierunkowa lista stron.
+  		\item \textbf{Slot} - miejsce, gdzie może leżeć wiersz.
+  		\begin{itemize}
+  			\item Mogą to być różne pozycje, ponieważ długość wiersza nie jest zdefiniowana.
+  			\item Jeżeli strona nie jest w pełni wypełniona, zostają puste miejsca.
+  			\item Są numerowane, każdy posida Update Number.
+  			\item Każdy posiada wskaźnik do extentu (osobny typ strony).
+  		\end{itemize}
+  		\item \textbf{Header} - zawiera informacje o slotach.
+  		\item \textbf{Footer} - suma kontrolna (CRC, bit parzystości, klucz, szyfrowanie). \emph do uzupełnienia
+  	\end{itemize}
+  	
+  	% ========================================================================
+  	% === kolumny ROWID
+  	% =======================================================================
+  	\part*{Kolumny ROWID}
+  	\section*{Co to jest?}
+  	Unikalna identyfikacja każdego wiersza, wartości w kolumnie ROWID jednoznacznie identyfikują wiersz w tablicy.ROWID definiujemy jako
+  	
+  	\section*{Właściwości}
+  	\begin{itemize}
+  		\item Każda tablica posiada domyślnie kolumnę ROWID (obsługiwaną przez serwer bazy danych), którą można odczytywać w ramach wykonywania komend SELECT, UPDATE, DELETE
+  		\item Po zmianie jakiejkolwiek wartości w wierszu następuje zmiana wartości ROWID (z zachowaniem unikalności w ramach tablicy) – versioning
+  		\item Budowa ROWID: identyfikator powstaje na skutek sklejenia odpowiednich wartości: page number, slot number, row serial number (insert sn), update serial number
+  		\begin{center}
+  			\(ROWID = PageNumber  + InsertNumber + SlotNumber + UpdateNumber\)
+  		\end{center}
+  		\item Mimo to jest typu STRING i można go używać w zdaniach SQL tak jak nazwy kolumny
+  		\item Zmienia wartość po każdej zmianie wiersza - należy korzystać z nich ostrożnie, zwłaszcza w formularzach \emph{master-detail}
+  	\end{itemize}
+  	\section*{Wykorzystanie}
+  	\begin{itemize}
+  		\item Ponieważ ROWID jednoznacznie identyfikuje wiersz, wykorzystuje się go przy tworzeniu wynikowej tablicy dla zapytań (Result Set)\\
+  		Przykład:\\
+  		\emph{SELECT} atr1, atr2, atr3\\
+  		\emph{FROM} tab\\
+  		\emph{WHERE} 'cond'\\\\
+  		\textbf{Wynik:}\\
+  		\begin{tabular}{|r|l|}
+  			\hline 
+  			ROWID${_1}$\\
+  			\hline
+  			ROWID${_2}$ \\
+  			\hline
+  			...\\
+  			\hline
+  			ROWID${_n}$\\
+  			\hline
+  			
+  		\end{tabular}
+  		\item W wypadku, kiedy zapytanie wymaga złączenia kilku tablic
+  		\item Do koordynacji działania dwóch kursorów
+  	\end{itemize}
+  	
+  	% ======================================================================
+  	% === POZIOMY IZOLACJI
+  	% ======================================================================
+  	\part*{Poziomy izolacji oraz blokady}
+  	
+  	
+  	\section*{Co to jest?}
+  	Mechanizm, który umożliwia wielodostęp poprzez zastosowanie izolacji oraz blokad.
+  	
+  	% --- właściwości izolacji
+  	\section*{Właściwości}
+  	\begin{itemize}
+  		\item Ustawienie poziomu izolacji decyduje o sposobie izolowania i blokowania danych 
+  		\item Dla aplikacji istotnie wielodostępnych poziomy izolacji muszą być dobrane do okoliczności 
+  		\item Blokowanie zapisu następuje na poziomie stron 
+  		\item Blokady są zwalniane po COMMIT / ROLLBACK 
+  		\item Poziomy izolacji ustala się:
+  		\begin{itemize}
+  			\item Poleceniem \emph{SET ISOLATION 'poziom'} w SQLTalk 
+  			\item Funkcją \emph{SqlSetIsolationLevel} w SQLWindows
+  		\end{itemize}
+  		\item Każdy kursor otwarty przez klienta ma własny bufor wejściowy
+  	\end{itemize}
+  	
+  	% --- blokady
+  	\section*{Blokady}				
+  	\begin{itemize}
+  		\item \textbf{S-LOCK} - blokada w trybie dzielonym (shared), współdzielenie odczytu – każda transakcja może zablokować wybrany wiersz (rekord) i go odczytywać, Jeżeli chce go zmodyfikować, musi podnieść poziom blokady na X-LOCK, ale wtedy musi poczekać, aż inne transakcje zdejmą swoje S-LOCKi.
+  		\item \textbf{X-LOCK} - blokada w trybie wyłącznym, przejęcie wiersza (rekordu) na własność – można czytać, modyfikować, ale inne transakcje nie mają dostępu do tych danych. Innymi słowy, służy do zapisu.
+  		\item \textbf{U-LOCK} - Update (upgrade) lock. Może być tylko jeden na strone (podobnie jak X-LOCK). Transakcja (A) przejmuje dane na wyłączność, ale inne transakcje (B, C, D) mogą zakładać na nie S-LOCKi i odczytywać. \\ Jeśli A chce modyfikować dane, musi podnieść poziom blokady na X-LOCK, ale musi poczekać na zdjęcie przez pozostałe (B, C, D) blokad S-LOCK. U-LOCK daje A tą przewagę, że ona jako pierwsza będzie modyfikować dane, bo nikt inny nie założy X-LOCKa – bo U-LOCK blokuje strone. \\ Rzadko stosowany, posiada cechy obu poprzednich blokad.
+  	\end{itemize}
+  	
+  	% --- poziomy izolacji
+  	\section*{Poziomy izolacji}
+  	\begin{itemize}
+  		\item \textbf{RO} (\emph{Read Only})
+  		\begin{itemize}
+  			\item Nie ma S-LOCKa.
+  			\item Tworzy się “select snapshot”.
+  			\item Odczytuje się dane spojne w danej chwil.
+  			\item Innymi słowy - nie zakłada żadnych blokad, ale nie pozwala na modyfikacje.
+  			\item Poziom przeznaczony do odczytów, które muszą zawierać dane z tej samej chwili.
+  			\item Możliwość użycia tego trybu trzeba odblokować przez \emph{SET READONLY ON}
+  			\item Przekazuje „migawkę" danych z chwili zadania zapytania.
+  			\item Używa specjalnych plików .HIS do przechowywania migawki.
+  		\end{itemize}
+  		\item \textbf{RL} (\emph{Release Lock})
+  		\begin{itemize}
+  			\item Przeznaczony do odczytu
+  			\item Nie ma S-LOCKa, ale w praktyce DBMS zakłada go na chwilę, odczytuje spójne dane, a następnie zwalnia.
+  			\item Schemat działania:
+  			\begin{itemize}
+  				\item Wypełnia bufor wejściowy danymi.
+  				\item Zakłada blokadę na stronę na której jest kursor.
+  				\item Zwalnia blokadę natychmiast po zakończeniu operacji.
+  			\end{itemize}
+  			\item Zapewnia dobry wielodostęp.
+  			\item Poziom przeznaczony do pokazywania wielu wierszy.
+  		\end{itemize}
+  		\item \textbf{CS} (\emph{Cursor Stability})
+  		\begin{itemize}
+  			\item Pobiera do bufora tylko pojedynczy wiersz.
+  			\item Blokowana jest tylko „bieżąca" strona - ta na której jest kursor.
+  			\item Blokada jest zdejmowana gdy kursor przejdzie na inną stronę.
+  			\item Dane między kolejnymi odczytami mogą być zmienione przez innych użytkowników.               \item Generuje duży ruch na sieci, ale nie blokuje dostępu innym.
+  			\item Poziom przeznaczony do zmian pojedynczych wierszy.
+  			\item Wykorzystywane przy wybieraniu wierszy do modyfikacji ( użytkownik je sobie przegląda w aplikacji i wprowadza zmiany, a poźniej zapisuje ). S-LOCK, U-LOCK, X-LOCK.
+  			\item Składnia\\
+  			\centerline{\emph{SELECT ... FOR UPDATE dla UPDATE .... WHERE CURRENT OF CURSOR}}
+  		\end{itemize}
+  		\item \textbf{RR} (\emph{Repetable Read})
+  		\begin{itemize}
+  			\item Wypełnia bufor wejściowy danymi.
+  			\item Wszystkie przeczytane strony zostają zablokowane.
+  			\item Gwarantuje powtarzalność odczytów wiersza w ramach transakcji.
+  			\item Jest to domyślny poziom izolacji.
+  			\item Pełne blokowanie S-LOCK, U-LOCK, X-LOCK.
+  			\item Składnia\\
+  			\centerline{\emph{SET ISOLATION RL}}
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	
+  	% --- Fazy realizacji zapytania SQL
+  	\part*{Fazy realizacji zapytania SQL}
+  	\begin{itemize}
+  		\item \textbf{Faza PREPARE}		% === PREPARE ===
+  		\begin{itemize}
+  			\item Przesłanie komendy do serwera
+  			\item Analiza syntaktyczna
+  			\item Sprawdzanie istnienia obiektów (tablice, perspektywy, kolumny)
+  			\item Sprawdzenie uprawnień (poziom uprawnień do operowania na zawartościach tabel)
+  			\item Podstawienia (np. zastąpienie perspektyw, synonimów)
+  			\begin{itemize}
+  				\item Pobranie statystyk z katalogu systemowego
+  				\item Analiza możliwych ścieżek realizacji wyszukiwania (access path)
+  				\item Wybór ścieżki o najniższym koszcie wykonania (SQL cost)
+  			\end{itemize}
+  			\item Tłumaczenie na ciąg wywołań wykonywalnych modułów
+  		\end{itemize}
+  		\item \textbf{Faza EXECUTE}		% === EXECUTE ===
+  		\begin{itemize}
+  			\item Wysłanie zmiennych wiążących (bind variables)
+  			\item Wykonanie komendy (rozpoczęcie tworzenia zbioru \emph{result set})
+  		\end{itemize}
+  		\item \textbf{Faza FETCH}		% === FETCH ===
+  		\begin{itemize}
+  			\item pobieranie wierszy rozwiązania (każdy “FETCH” to pobranie wiersza ze zbioru \emph{result set})
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	
+  	% ===================================================================
+  	% === ZARZĄDZANIE DOSTĘPEM
+  	% ===================================================================
+  	\part*{Zarządzanie dostępem}
+  	
+  	% --- Autoryzacja
+  	\section*{Autoryzacja}
+  	\begin{itemize}
+  		\item Użytkownicy są identyfikowani przez nazwy i hasła 
+  		\item Identyfikator \textbf{PUBLIC} używany jest do przyznania przywilejów dla wszystkich użytkowników
+  	\end{itemize}
+  	
+  	% --- Poziomy uprawnień i róznice między nimi
+  	\section*{Poziomy uprawnień i róznice między nimi}
+  	\begin{itemize}
+  		\item \textbf{SYSADM}
+  		\begin{itemize}
+  			\item Pełna kontrola nad całą bazą.
+  			\item Potrafi wszytsko, zarządza użytkownikami, hasłami i poziomami uprzywilejowania.
+  			\item Jest tylko jeden - nie można utworzyć nowych \emph{sysadmów}.
+  			\item Jako jedyny może tworzyć nowych użytkowników.
+  		\end{itemize}
+  		\item \textbf{DBA}
+  		\begin{itemize}
+  			\item Pełny dostęp do bazy i wszystkich jej obiektów.
+  			\item Zarządzanie przywilejami - może przyznawać i odbierać prawa do obiektów innym.
+  		\end{itemize}
+  		\item \textbf{RESOURCE}
+  		\begin{itemize}
+  			\item Tworzenie i usuwanie stworzonych przez siebie tablic.
+  			\item Odbieranie i nadawanie praw do ww. tablic innym użytkownikom.
+  		\end{itemize}
+  		\item \textbf{CONNECT}
+  		\begin{itemize}
+  			\item Połączenie z bazą danych.
+  			\item Operacje na tablicach do których ma odpowienie uprawnienia.
+  			\item Dostęp tylko według przyznanych przywilejów.
+  			\item Tworzenie synonimów.
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	% --- Przywileje
+  	\section*{Przywileje dostępu}
+  	\begin{itemize}
+  		\item Wyszukiwanie (\emph{SELECT}) 
+  		\item Zmiana danych (\emph{INSERT}, \emph{DELETE}, \emph{UPDATE}), można określić dostęp do kolumn 
+  		\item Zmiana struktury (\emph{ALTER}) 
+  		\item Tworzenie i usuwanie indeksów (\emph{INDEX})
+  		\item Właściciel tablicy ma do niej wszystkie prawa
+  	\end{itemize}
+  	
+  	% --- Prawa do obiektów bazy danych
+  	% === DO UZUPEŁNIENIA ==============
+  	\section*{Prawa do obiektów bazy danych}
+  	\begin{itemize}
+  		\item Prawa można nadawać do obiektów bazy danych (tablica, perspektywa, procedura bazy danych)
+  		\item Sposoby nadawania uprawnień do obiektów:
+  		\begin{itemize}
+  			\item \textbf{Poziom baz danych}\\
+  			GRANT CONNECT TO <\emph{ids}> IDENTIFIED BY <\emph{pass}>\\
+  			GRANT {RESOURCE, DBA} TO <\emph{ids}>\\
+  			REVOKE {CONNECT, 
+  				RESOURCE, DBA} FROM  <\emph{ids}>\\\\
+  			\textbf{Wynik:}\\
+  			\begin{tabular}{|l|l|}
+  				\hline
+  				SYSADM\\
+  				\hline
+  				\textbf{DBA}\\
+  				\hline
+  				\textbf{RESOURCE}\\
+  				\hline
+  				\textbf{CONNECT}\\
+  				\hline
+  			\end{tabular}\\
+  			\item \textbf{Poziom tablic i perspektyw}\\
+  			GRANT  <priv> ON <tab/view> TO {<ids>, PUBLIC}\\
+  			REVOKE <priv> ON <tab/view> FROM {<ids>, PUBLIC}\\\\
+  			\textbf{Wynik:}\\
+  			\begin{tabular}{|l|l|}
+  				\hline \textbf{<priv>}\\
+  				\hline ALL\\
+  				\hline \textbf{SELECT}\\
+  				\hline \textbf{INSERT}\\
+  				\hline \textbf{DELETE}\\
+  				\hline \textbf{INDEX}\\
+  				\hline ALTER\\
+  				\hline UPDATE [ (col) [,(col) .. ]]\\
+  				\hline
+  			\end{tabular}\\
+  			\item \textbf{Przykrywanie poprzez synonimy}\\
+  			CREATE PUBLIC SYNONYM nazwa FOR tabela / perspektywa\\
+  			CREATE SYNONYM użytkownik.nazwa FOR tabela / perspektywa\\
+  			\emph{Synonimy moga być publiczne i prywatne, pierwszeństwo mają synonimy \textbf{prywatne}}
+  			
+  			
+  			\item Uprawnienia dla tablic przez perspektywy dla określonych użytkowników
+  			\item Możliwość wykonywania procedur z prawami twórcy
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	% --- Zabezpieczenie serwera
+  	\section*{Zabezpieczenie serwera}
+  	\begin{itemize}
+  		\item Komenda \emph{SET SERVER nazwa\_serwera / hasło\_serwera} jest konieczna do wykonania operacji na serwerze:
+  		\begin{itemize}
+  			\item Backup i restore 
+  			\item Tworzenie oraz kasowanie baz i dzienników 
+  			\item Instalacja oraz deinstalacja bazy danych
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	% --- Synonimy i perspektywy
+  	\section*{Synonimy i perspektywy}
+  	\begin{itemize}
+  		\item Dla ułatwienia dostępu do obiektów utworzonych przez innego użytkownika można definiować synonimy poleceniem:
+  		\center{\emph{CREATE} [\emph{PUBLIC}] \emph{SYNONYM} synonim \emph{FOR} uid.tabela}
+  		\begin{itemize}
+  			\item Istnienie publicznego synonimu nie oznacza publicznych praw dostępu! 
+  			\item Do selektywnego udostępniania tabel można używać perspektyw, w przypadku przywilejów umożliwiających zmiany warto użyć perspektyw \emph{WITH CHECK OPTION}
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	% --- Nadawanie i odbieranie przywilejów dostępu
+  	\section*{Nadawanie i odbieranie przywilejów dostępu}
+  	\subsection*{Do tablic i perspektyw}
+  	\begin{itemize}
+  		\item przywileje może nadawać i odbierać tylko właściciel, DBA lub SYSADM.
+  		\item Można odebrać tylko przywileje nadane expilicite
+  	\end{itemize}
+  	
+  	
+  	% ==========================================================================
+  	% === Sposoby zarządzania dostępem 
+  	% ==========================================================================
+  	\part*{Sposoby zarządzania dostępem}
+  	
+  	% --- SQL
+  	\section*{W SQL}
+  	\begin{itemize}
+  		\item Tworzenie użytkowników i nadawanie poziomów dostępu\\\\
+  		\centerline{\emph{GRANT CONNECT}|\emph{RESOURCE}|\emph{DBA TO} uid \emph{IDENTIFIED BY} passwd;}
+  		\item Usuwanie użytkowników\\\\ \centerline{\emph{REVOKE CONNECT}|\emph{RESOURCE}|\emph{DBA FROM} uid;}
+  		\item Przyznawanie przywilejów dostępu do tabeli lub\\\\ \centerline{\emph{GRANT ALL} | lista\_przywilejów \emph{ON} nazwa \emph{TO} uid | \emph{PUBLIC} }
+  		\item Przywilej \emph{UPDATE} może dotyczyć tylko wybranych kolumn\\\\ \centerline{\emph{UPDATE} ( lista\_kolumn ) }
+  		\item Odbieranie przywilejów\\\\ \centerline{\emph{REVOKE ALL} | lista\_przywilejów \emph{FROM} uid | \emph{PUBLIC}}
+  		\item Użytkowników i przywileje można oglądać przez perspektywy:
+  		\begin{itemize}
+  			\item \emph{SYSUSERAUTH}
+  			\item \emph{SYSTABAUTH}
+  			\item \emph{SYSCOLAUTH}
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	% --- Różnice pomiędzy modelem logicznym i fizycznym bazy danych
+  	\section*{Różnice pomiędzy modelem logicznym i fizycznym bazy danych}
+  	\subsection*{Model logiczny}	% --- model logiczny
+  	\begin{itemize}
+  		\item Zawiera encje i klucze pierwotne
+  		\item Nie posiada kluczy obcych
+  		\item Typy danych i identyfikatory są abstrakcyjne
+  		\item Związek M:N
+  		\item Brak struktur dodatkowych
+  	\end{itemize}
+  	\subsection*{Model fizyczny}	% --- model fizycznjy
+  	\begin{itemize}
+  		\item Konkretne tablice
+  		\item Migracja kluczy obcych
+  		\item Identyfikatory zgodne z konkretnym serwerem
+  	\end{itemize}
+  	
+  	% --- Różnice w dostępie do danych za pośrednictwem indeksów B+tree i cluster hashed w SQLBase
+  	% === DO UZUPEŁNIENIA ==============
+  	\section*{Różnice w dostępie do danych za pośrednictwem indeksów B+tree i cluster hashed w SQLBase}
+  	\subsection*{Co to jest?}
+  	\begin{itemize}
+  		\item \textbf{Full scan} - przegląda wszystkie wiersze
+  		\item \textbf{B+Tree} - dostęp przez drzewo indeksowe zrównoważone, liczba wyprowadzeń z liści nie jest stała
+  		\item \textbf{Selekcja przez indeks} - ${h+1}$ odwołań
+  		\item \textbf{Cluster hashed} - specyficzny sposób rozmieszczenia rekordów, przy tworzeniu tabeli podaje się liczbę wierszy w tabeli, przy 1.  insercie alokacja pustych stron w 1 kawałku
+  	\end{itemize}
+  	\begin{itemize}
+  		\item Działanie optymalizatora "wybierającego" metodę dostępu na podstawie postaci predykatu w WHERE
+  		\item Dla predykatu wycinającego ileś wierszy (np. Typu “<” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z roziwiązaniami).
+  		\item Wstawianie jest szybsze dla cluster hashed.
+  		\item 
+  	\end{itemize}
+  	
+  	% === 
+  	
+  	%===============================================================================	
+  	%*******************************************************************************
+  	%===============================================================================
   \end{document}
