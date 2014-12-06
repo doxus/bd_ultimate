@@ -4,6 +4,7 @@
   \usepackage[utf8]{inputenc}
   \usepackage{graphicx}
   \usepackage{amsmath}
+  \usepackage{indentfirst}
   
   \usepackage[unicode, bookmarks=true]{hyperref} %do zakładek
   
@@ -149,7 +150,7 @@
   	% =======================================================================
   	\part*{Kolumny ROWID}
   	\section*{Co to jest?}
-  	Unikalna identyfikacja każdego wiersza, wartości w kolumnie ROWID jednoznacznie identyfikują wiersz w tablicy.ROWID definiujemy jako
+  	Unikalna identyfikacja każdego wiersza, wartości w kolumnie ROWID jednoznacznie identyfikują wiersz w tablicy.
   	
   	\section*{Właściwości}
   	\begin{itemize}
@@ -164,6 +165,7 @@
   	\end{itemize}
   	\section*{Wykorzystanie}
   	\begin{itemize}
+  		\item Służy do identyfikacji wiersza
   		\item Ponieważ ROWID jednoznacznie identyfikuje wiersz, wykorzystuje się go przy tworzeniu wynikowej tablicy dla zapytań (Result Set)\\
   		Przykład:\\
   		\emph{SELECT} atr1, atr2, atr3\\
@@ -191,7 +193,6 @@
   	% ======================================================================
   	\part*{Poziomy izolacji oraz blokady}
   	
-  	
   	\section*{Co to jest?}
   	Mechanizm, który umożliwia wielodostęp poprzez zastosowanie izolacji oraz blokad.
   	
@@ -204,7 +205,7 @@
   		\item Blokady są zwalniane po COMMIT / ROLLBACK 
   		\item Poziomy izolacji ustala się:
   		\begin{itemize}
-  			\item Poleceniem \emph{SET ISOLATION 'poziom'} w SQLTalk 
+  			\item Poleceniem \emph{SET ISOLATION} 'poziom' w SQLTalk 
   			\item Funkcją \emph{SqlSetIsolationLevel} w SQLWindows
   		\end{itemize}
   		\item Każdy kursor otwarty przez klienta ma własny bufor wejściowy
@@ -256,7 +257,7 @@
   			\item Składnia\\
   			\centerline{\emph{SELECT ... FOR UPDATE dla UPDATE .... WHERE CURRENT OF CURSOR}}
   		\end{itemize}
-  		\item \textbf{RR} (\emph{Repetable Read})
+  		\item \textbf{RR} (\emph{Read Repeatability (albo Repetable Read)})
   		\begin{itemize}
   			\item Wypełnia bufor wejściowy danymi.
   			\item Wszystkie przeczytane strony zostają zablokowane.
@@ -269,8 +270,17 @@
   	\end{itemize}
   	
   	
-  	% --- Fazy realizacji zapytania SQL
+  	% ======================================================================
+  	% === Fazy realizacji zapytania SQL
+  	% ======================================================================
   	\part*{Fazy realizacji zapytania SQL}
+  	\subsection*{Komendy}
+  	\begin{itemize}
+  		\item DML: INSERT, DELETE, UPDATE
+  		\item DQL: SELECT
+  		\item Wywoływane  z poziomu języka systemu Centura Builder lub SQLBase SPL (Storage Procedure Language)
+  	\end{itemize}
+  	\subsection*{Fazy}
   	\begin{itemize}
   		\item \textbf{Faza PREPARE}		% === PREPARE ===
   		\begin{itemize}
@@ -296,7 +306,89 @@
   			\item pobieranie wierszy rozwiązania (każdy “FETCH” to pobranie wiersza ze zbioru \emph{result set})
   		\end{itemize}
   	\end{itemize}
-  	
+  	\subsection*{Etapy przetwarzania}
+  	\begin{enumerate}
+  		% --- CONNECT
+  		\item \textbf{BOOL SqlConnect (SqlHandle)}\\
+  		Przykład:\\
+  		Set SQLDatabase 	= ‘DEMO’\\
+  		Set SQLUser  		= ‘SYSADM’\\
+  		Set SQLPassword 	= ‘Haslo’\\
+  		if SqlConnect (hsql)\\
+  			
+  		% --- PREPARE
+  		\item \textbf{BOOL SqlPrepare (SqlHandle, String)}\\
+  		Przykład:\\
+  		if SqlPrepare (hsql, \\
+	  	‘SELECT t1.a1, t1.a2, t2.b1 \\
+  		FROM tablica1 t1, tablica2 t2\\
+  		WHERE  t1.a4 = t2.b2 and t1.b3 = :bind\_var\\
+  		INTO  :into\_var1, :into\_var2, :into\_var3 ‘)\\\\
+  		\textbf{Zmienne}:
+  		\begin{itemize}
+  			\item \textit{bind\_var} – wpłyną na selekcję
+  			\item \textit{into\_var} – do czego zwrócimy wyniki
+  		\end{itemize}
+  		\textbf{Działanie}:
+  		\begin{itemize}
+  			\item PREPARE służy do przygotowania instrukcji SQL.
+  			\item W dynamicznym SQL instrukcje są tworzone w czasie wykonywania programu i przechowywane jako tekst w zmiennej znakowej.
+  			\item Instrukcja PREPARE konwertuje zawartość zmiennej na instrukcję SQL. Można ją następnie wykonać instrukcją EXECUTE lub usunąć DEALLOCATE\\
+  			Przykład:\\
+  			PREPARE LOCAL instrukcjaBartka FROM :SQLInstrukcja1;\\
+  			Przygotowana zostaje instrukcja o nazwie 'instrukcjaBartka' ze zmiennej znakowej 'SQLInstrukcja1', nie będzie ona widoczna dla innych instrukcji
+  		\end{itemize}
+  		
+  		% --- EXECUTE
+  		\item \textbf{BOOL SqlExecute (SqlHandle)}\\
+  		Przykład:
+  		if SqlExecute (hsql)
+  		\begin{itemize}
+  			\item Wysłanie zmiennych wiążących (bind variables)
+  			\item Wykonanie komendy (rozpoczęcie tworzenia zbioru result set)
+  			\item EXECUTE służy do wykonywania przygotowanej instrukcji SQL (stworzonej instrukcją PREPARE).\\
+  			Przykład:\\
+  			EXECUTE instrukcja1 USING :nazwa, :miejsce\_urodz INTO LOCAL deskryptor3;\\
+  			Wykonywana jest instrukcja o nazwie 'instrukcja1', dwa parametry są przekazywane do lokalnego deskryptora o nazwie 'deskryptor3'.
+  		\end{itemize}
+  		
+  		% --- FETCH NEXT
+  		\item \textbf{BOOL SqlFetchNext (SqlHandle, Number) (SqlFetchPrevious , SqlFetchRow)}\\
+  		Przykład:
+  		if SqlFetchNext (hsql, nRet)
+  		\begin{itemize}
+  			\item Pobieranie wierszy rozwiązania (każdy “FETCH” to pobranie wiersza ze zbioru result-set)
+  			\item Przesuwanie się w zbiorze rozwiązań (do góry i na dół)
+  			\item FETCH umożliwia pobranie wierszy z otwartego kursora.
+  			\item Wartości są umieszczane na specjalnej liście w uporządkowanej kolejności.\\
+  			FETCH orientacja FROM nazwa INTO specyfikacja\_docelowa, ...
+  			\item Kursor - obiekt używany do przechowywania wyników zapytania. Różni się od widoku tym iż nie zachowuje się jak tabela. Jest rodzajem zmiennej, przechowującej wyniki zapytania, aby można je później wykorzystać wiersz po wierszu.
+  		\end{itemize}
+  		SQL Base pracuje w trybie result-set – serwer w wyprzedzeniem podrzuca wiersze, które później mogą być potrzebne.\\
+  		
+  		\item \textbf{BOOL SqlDisconnect (SqlHandle)}\\
+  		Przykład:
+  		if SqlDisconnect (hsql)\\\\
+  		Przykład 1:\\
+  		if SqlPrepare (hSqlHandle, \\
+  		‘UPDATE tablica1 \\
+  		SET	a1 = @NOW,\\
+  		a2 = :var1\\
+  		a3 = :var2\\
+  		WHERE\\
+  		a4 = 1999-12-24\\
+  		a5 = :var3’)\\
+  		if SqlExecute (hSqlHandle)\\
+  		if SqlCommit (hSqlHandle)\\\\
+  		Przykład 2:\\\\
+  		if SqlPrepareAndExecute (hSqlHandle, \\
+  		‘INSERT INTO tablica1 \\
+  		(a1, a2, a3, a4, a5, a6)\\
+  		VALUES\\
+  		(@NOW, ‘text’, 112, 1999-12-23, :var1, :var2)’)\\
+  		if SqlImmediate (‘ROLLBACK’)
+  	\end{enumerate}
+  		
   	
   	% ===================================================================
   	% === ZARZĄDZANIE DOSTĘPEM
@@ -351,7 +443,7 @@
   	
   	% --- Prawa do obiektów bazy danych
   	% === DO UZUPEŁNIENIA ==============
-  	\section*{Prawa do obiektów bazy danych}
+  	\section*{Nadawanie praw do obiektów bazy danych}
   	\begin{itemize}
   		\item Prawa można nadawać do obiektów bazy danych (tablica, perspektywa, procedura bazy danych)
   		\item Sposoby nadawania uprawnień do obiektów:
@@ -392,8 +484,6 @@
   			CREATE PUBLIC SYNONYM nazwa FOR tabela / perspektywa\\
   			CREATE SYNONYM użytkownik.nazwa FOR tabela / perspektywa\\
   			\emph{Synonimy moga być publiczne i prywatne, pierwszeństwo mają synonimy \textbf{prywatne}}
-  			
-  			
   			\item Uprawnienia dla tablic przez perspektywy dla określonych użytkowników
   			\item Możliwość wykonywania procedur z prawami twórcy
   		\end{itemize}
@@ -478,15 +568,46 @@
   		\item \textbf{B+Tree} - dostęp przez drzewo indeksowe zrównoważone, liczba wyprowadzeń z liści nie jest stała
   		\item \textbf{Selekcja przez indeks} - ${h+1}$ odwołań
   		\item \textbf{Cluster hashed} - specyficzny sposób rozmieszczenia rekordów, przy tworzeniu tabeli podaje się liczbę wierszy w tabeli, przy 1.  insercie alokacja pustych stron w 1 kawałku
+  		\item Np. RCNT 1000 -> 10 (liczba wierszy na stronie) -> PCNT 100
   	\end{itemize}
+  	\subsection*{Pozostałe}
   	\begin{itemize}
   		\item Działanie optymalizatora "wybierającego" metodę dostępu na podstawie postaci predykatu w WHERE
-  		\item Dla predykatu wycinającego ileś wierszy (np. Typu “<” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z roziwiązaniami).
+  		\item Dla predykatu wycinającego ileś wierszy (np. Typu “<” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z rozwiązaniami).
   		\item Wstawianie jest szybsze dla cluster hashed.
-  		\item 
   	\end{itemize}
   	
-  	% === 
+  	% ============================================================================
+  	% === SPOSOBY ŁĄCZENIA TABLIC
+  	% ============================================================================
+  	\section*{Sposoby łączenia tablic (nazwy)}
+  	\begin{itemize}
+  		\item \textbf{NESTED LOOP}\\
+  		\(m=1000\)\\\(n=1000\)\\\(n\times{m}=1000000\)
+  		\item \textbf{INDEX LOOP}\\
+  		\(m\times({h}+1)=m\times{(logn+1)}=1000\times{(3+1)}=4000\)\\
+  		Złożonosć rzędu \((m\times\log{n})\)
+  		\item \textbf{SORT\_MERGE} (uporządkuj i scal)\\
+  		W przypadku pesymistycznym nie produkuje dużo indeksów (??)\\
+  		Złożonosć \(m+n+m\log_2 m+n\log_2 n\)\\
+  		Gdzie:\\
+  		\(n+m\) - przejscie raz po każdej tablicy\\
+  		\(m\log_2 m+n\log_2 n\) - sortowanie tablic
+  		\item \textbf{HASH JOIN}\\
+  		Z indeksem Cluster Hashed\\
+  		Niech częsciowe wyniki złączeń są w hash join za kolejne łączenie
+  	\end{itemize}
+  	
+  	% ============================================================================
+  	% === Parametry wyznaczane/aktualizowane w ramach realizacji UPDATE STATISTICS
+  	% ============================================================================
+  	\section*{Parametry wyznaczane/aktualizowane w ramach realizacji UPDATE STATISTICS}
+  	
+  	% ============================================================================
+  	% === Wymienić rodzaje stron bazy danych 
+  	% ============================================================================
+  	\section*{Wymienić rodzaje stron bazy danych}
+  	
   	
   	%===============================================================================	
   	%*******************************************************************************
