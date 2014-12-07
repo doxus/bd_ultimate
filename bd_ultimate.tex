@@ -127,35 +127,110 @@
   	
   	
   	%===============================================================================
-  	%*** MATERIAŁY WYKŁADOWE *******************************************************
+  	%*** BUDOWA BAZY DANYCH ********************************************************
   	%===============================================================================
-  	\part*{Podstawy}
+  	\part*{Budowa bazy danych}
+  	\section*{Budowa fizyczna}
+  	\begin{itemize}
+  		\item Plik .dbs
+  		\item Budowa bazy danych (dwukierunkowa lista stron)
+  		\item Strony bazy danych (1K)\\
+  		\textbf{Rodzaje stron}:
+  		\begin{itemize}
+  			\item data row pages (slots)
+  			\item data extend pages (big columns)
+  			\item data long varchar pages
+  			\item data index pages (B+ trees)
+  			\item data overflow pages (for cluster hashed tables)
+  			\item data control pages (database control page, free extend list, group free page list, ...)
+  		\end{itemize}
+  	\end{itemize}
+  	
+  	%===============================================================================
+  	%*** PODSTAWY ********************************************************
+  	%===============================================================================
   	\section*{Podstawowe pojęcia}
   	\begin{itemize}
-  		\item \textbf{Strona} - Data Row Page.
-  		\item \textbf{Tablica} - dwukierunkowa lista stron.
+  		\item \textbf{Strona} - Data Row Page, rodzaj strony z wierszami bazy danych.
+  		\item \textbf{Tablica} - dwukierunkowa lista stron.\\
+  		\textit{Tablica na wielu stronach}.\\
+  		
   		\item \textbf{Slot} - miejsce, gdzie może leżeć wiersz.
   		\begin{itemize}
   			\item Mogą to być różne pozycje, ponieważ długość wiersza nie jest zdefiniowana.
   			\item Jeżeli strona nie jest w pełni wypełniona, zostają puste miejsca.
-  			\item Są numerowane, każdy posida Update Number.
+  			\item Są numerowane, każdy posiada Update Number. Numer ten jest wyznaczany poprzez globalny licznik Insert Number. \emph{Nie jestem pewien}
   			\item Każdy posiada wskaźnik do extentu (osobny typ strony).
   		\end{itemize}
   		\item \textbf{Header} - zawiera informacje o slotach.
-  		\item \textbf{Footer} - suma kontrolna (CRC, bit parzystości, klucz, szyfrowanie). \emph do uzupełnienia
+  		\item \textbf{Footer} - suma kontrolna (CRC, bit parzystości, klucz, szyfrowanie).
   	\end{itemize}
   	
-  	% ========================================================================
-  	% === kolumny ROWID
   	% =======================================================================
+  	% *** STRONY *****************************************************
+  	% ========================================================================
+  	\part*{Strony}
+  	\section*{Co to jest?}
+  	Strona to podstawowa wewnętrzna struktura bazy danych (jednostka przechowywania danych), która służy do organizacji informacji w bazie danych.
+  	\section*{Rodzaje stron}
+	  	\subsection*{Data Row Page}
+	  	Rodzaj strony z wierszami bazy danych.\\
+		Strony w pliku, strona ma numer - Page Number (PN) - 4B. Offset w pliku bazy danych.\\
+		Na 4B można zaadresować 4GB, ale jeden bit wykorzystywany do czegoś innego więc 2GB. Przestrzeń ma maksymalny rozmiar.\\
+		Przy dużej użytkowaniu bazy dochodzi do defragmentacji stron i przeładowania bazy.
+  		\subsection*{Extent Page}
+  		Strona przyrostowa przeznaczona dla "extentów". Jest zjawiskiem niepożądanym, którego istnienie wynika z fragmentacji. Po aktualizacji bazy danych mogą powstać extent pages jeżeli po defragmentacji ilość danych nie mieści się w jednym segmencie (stronie).
+  		\subsection*{Long Page} 
+  		Inna przestrzeń tabel z inną jednostką alokacji przeznaczoną dla obiektów typu BLOB.\\
+  		BLOB - Binary Large OBject.\\
+  		Long Page zakłada drugą przestrzeń tabel przeznaczoną dla obiektów dziwnych typów, jak np. BLOB, w celu uniknięcia mieszania typów (np. prostych i dziwnych).\\
+  		W skrócie: jest wykorzystywane, gdy strona posiada wiele sekcji danych, które są podzielone na grupy.
+  		\subsection*{Index Page}
+  		B-Tree lub B+-Tree. Każdy węzeł drzewa indeksowego to jedna strona 1k. Jest to efektywniejszy sposób przechowywania danych.
+  		\subsubsection*{Właściwości}
+  		\begin{itemize}
+  			\item Złożoność obliczeniowa jest w przybliżeniu równa \(log_M N\).
+  			\item W celu rzadszego przebudowywania drzewa (zmiany, degradacji indeksu) istnieje też "\textbf{precent free}" (\textbf{PCTFREE}) - rezerwuje więcej wolnego miejsca na przyszłość, przeważnie 10 - 30\%.
+  			\item Węzły B-drzewa połączone od lewej do prawej. Gdyby czytać wartości kluczy to będą one w porządku niemalejącym, w celu wprowadzenia uporządkowania.
+  			\item Łatwość wyszukiwania informacji.
+  		\end{itemize}
+  		\subsubsection*{Cluster Hashed}
+  		W celu polepszenia wydajności takich drzew indeksowych stosuje się nowy rodzaj indeksu, \emph{Cluster Hashed}, który jest oparty na funkcji hashującej. W zasadzie nie jest to indeks, a sposób umieszczania w pliku. Definiujemy go wzorem:\\\\
+  		\centerline{\textit{create cluster hashed index NAME on PRAC(nrp) size N [buckets]}}
+  		\subsubsection*{Cechy Cluster Hashed}
+  		\begin{itemize}
+  			\item Bucket (kubełek) - strona na wyjściu
+  			\item N - ilość stron
+  			\item Przy pominięciu Buckets, N oznacza liczbę rekordów, silnik sam szacuje rozmiar rekordu i stwierdzi ile rekordów przypada na 1 stronę.
+  			\item Nie tworzy indeksu, tylko mówi jak te dane mają być umieszczane. Można założyć tylko jeden cluster hashed, ponieważ jest to sposób ułożenia danych.
+  			\item Funkcja mieszająca na podstawie klucza zwracająca od razu nr strony. Kubłem jest strona.
+  			\item Trzeba podać rozmiar, więc sprawdza się dla zbiorów o niezmiennym rozmiarze lub wolno rosnących.
+  		\end{itemize}
+  		\subsubsection*{Przykładowy generator multiplikatywno-addytywny}
+  		\centerline{\(x_{n+1} = ((a\times x_{n}) + b) \mod n\)}
+  		\textbf{Własciwosci}:
+  		\begin{itemize}
+  			\item a, b oraz n powinny być liczbami pierwszymi.
+  			\item Prosty generator losowy, ale z wadami. Skoro zwraca numer strony, fajnie by było aby były dość blisko (odczytywanie).
+  			\item Numer strony jest dzielony mod P (P - liczba pierwsza większa od N?) aby były umieszczone.
+  			\item Wady: służy tylko do zapytań X = WARTOSC. Przy kolizjach tworzy się dodatkowa strona.
+  			\item Zalety: dostajemy to co chcemy w jednym kroku.
+  		\end{itemize}
+  	
+  		\subsection*{Overflow Page}
+  		Tworzona gdy przepełni się strona \textit{Cluster Hashed}, strona z danymi albo przy kolizji
+  		
+  	% ========================================================================
+  	% *** kolumny ROWID *****************************************************
+  	% ========================================================================
   	\part*{Kolumny ROWID}
   	\section*{Co to jest?}
-  	Unikalna identyfikacja każdego wiersza, wartości w kolumnie ROWID jednoznacznie identyfikują wiersz w tablicy.
-  	
+  	Tworzone przy rodzaju stron Data Row Page. Unikalna identyfikacja każdego wiersza, wartości w kolumnie ROWID jednoznacznie identyfikują wiersz w tablicy.
+  	% --- Własciwosci
   	\section*{Właściwości}
   	\begin{itemize}
   		\item Każda tablica posiada domyślnie kolumnę ROWID (obsługiwaną przez serwer bazy danych), którą można odczytywać w ramach wykonywania komend SELECT, UPDATE, DELETE
-  		\item Po zmianie jakiejkolwiek wartości w wierszu następuje zmiana wartości ROWID (z zachowaniem unikalności w ramach tablicy) – versioning
+  		\item Po zmianie jakiejkolwiek wartości w wierszu następuje zmiana wartości ROWID (z zachowaniem unikalności w ramach tablicy) – umożliwienie wersjonowania (versioning). 
   		\item Budowa ROWID: identyfikator powstaje na skutek sklejenia odpowiednich wartości: page number, slot number, row serial number (insert sn), update serial number
   		\begin{center}
   			\(ROWID = PageNumber  + InsertNumber + SlotNumber + UpdateNumber\)
@@ -182,11 +257,284 @@
   			\hline
   			ROWID${_n}$\\
   			\hline
-  			
   		\end{tabular}
   		\item W wypadku, kiedy zapytanie wymaga złączenia kilku tablic
   		\item Do koordynacji działania dwóch kursorów
   	\end{itemize}
+  		
+  	%===============================================================================
+  	% *** ZABEZPIECZENIE BAZY DANYCH ***********************************************
+  	%===============================================================================
+  	\part*{Zabezpieczenie bazy danych}
+  	
+  	\section*{Logi}
+  	\subsection*{Co to jest?}
+  	Pliki z obrazami transakcji (przed i po jej wykonaniu), albo zbiory z opisami transakcji.
+  	\subsection*{Przykład logu}
+  	\begin{itemize}
+  		\item Transakcja 108 start  + data i czas
+  		\item Stara wartość
+  		\item Nowa wartość
+  		\item Transakcja 108 stop + data i czas
+  	\end{itemize}
+  	\subsection*{Zarządzanie logami}
+  	Kolejno tworzone są pliki: 1.log, 2.log itd. Pliki .log się wymieniają -> po utworzeniu 2.log, 1.log nie jest już potrzebne.
+  	\subsection*{Położenie logów}
+  	Można plik bazy danych i log umieścić na osobnych dyskach - dane na STRIPE, log na MIRROR. Oba procesy nazywa się odpowiednio stripping oraz mirroringiem. Na STRIPE zapis jest buforowany, a na MIRROR niebuforowany (szybki, bezpieczny, ale zajmuje mało miejsca).
+  	
+  	\section*{Komenda ROLLBACK (UNDO)}
+  	\begin{itemize}
+  		\item \emph{Before Image} - to co się stało i nie jest zatwierdzone (bez commit)
+  		\item \emph{After Image} - to co się stało i jest zatwierdzone (po commit)
+  		\item Nie powinno być długich transakcji. Do odtworzenia z logu też potrzebne jest miejsce oraz też jest to operacja transakcyjna.
+  		\item Przy odtwarzaniu logów potrzebuje on drugie tyle logów do odtworzenia.
+  		\item \emph{TSL} (Transaction Span Limit) – parametr ochronny, zostawia tyle wolnego miejsca ile zajmują logi dotychczasowe, żeby nie zabrakło miejsca i żeby nie tworzyć zbyt długich transakcji.
+  		\item Komenda \textit{set log backup} - aby zrealizowane transakcje (after images) nie były kasowane.
+  	\end{itemize}
+  	
+  	\section*{Komenda ROLLFORWARD (REDO)}
+  	Zrób jeszcze raz. Można restorenąć backup bazy danych.
+  	\subsection*{Możliwości}
+  	\begin{itemize}
+  		\item ROLLFORWAD TO END - ponowne wykonanie transakcji -> uzupełniona po ostatnią transakcję, która się skończyła (posiada znacznik końca).
+  		\item ROLLFORWAD TO "DATETIME" - wszystkie transakcje której zakończyły się do pewnej godziny. Umożliwia zoptymalizowania backupowania, np. od poniedziałku do czwartku wykonywane są backupy logów (BACKUP LOG), a w piątki bazy danych (BACKUP DATA BASE). Muszą być wtedy backupy ze wszystkich dni, by przypadkiem któregoś nie zgubić.
+  		\item ROLLFORWAD END - zakończenie rollforwardowania
+  		\item ROLLFORWAD CONTINUE - po skończeniu kontynuacja rollforwardowania
+  	\end{itemize}
+  	
+  	\section*{Cache bazy danych}
+  	Dane nie są zapisywane od razu z powrotem/ Szuka w tym cache'u, a nie w bazie (??).
+  	\subsection*{Dirty page}
+  	W cache ma inną wartość niż w bazie danych. Ale zapisane w logu.
+  	\subsection*{Checkpoints}
+  	Mechanizm zdarzeń. Tworzone są rzadko, np. co 20 minut, gdy jest przepełnienie cache, w idle time.
+  	Gdy nadejcie CHECKPOINT wtedy zawartość cache jest zrzucana i nie ma już brudnych stron.
+  	
+  	\section*{Przykładowy scenariusz}
+  	\begin{tabular}{|l|l|}
+  		\hline
+  		1.log: & 2.log\\
+  		\(110+dt\) & ... //110\\
+  		... & ...\\
+  		\(109+dt\) & \(111+dt\)\\
+  		... & ...\\
+  		\(108+dt\) & \(111-dt\)\\
+  		... & ...\\
+  		\(108-dt\) & \(112+dt\)\\
+  		... & ...\\
+  		CHECKPOINT & \\
+  		... & \\
+  		\(109-dt\) & \\
+  		... & \\
+  		\hline
+  	\end{tabular}\\
+  	\subsection*{Co się dzieje?}
+  	\begin{itemize}
+  		\item 112 - rozpoczęta, ale nie zakończona - ignorowana.
+  		\item 111 - zakończyła się, więc REDO, trzeba pchnąć do cache
+  		\item 109 - to co się stało do checkpointa zostało zapisane, ale skończyła się po checkpoincie. Ten kawałek po checkpoincie trzeba pchnąć REDO
+  		\item 110 - nie skończyła się przed rozpoczęciem - trzeba ją wycofać, UNDO
+  		\item 108 - można zignorować, bo się skończyła po checkpoincie
+  	\end{itemize}
+  	\subsection*{Gdy się zapełni cache - mechanizm}
+  	\begin{itemize}
+  		\item LRU - Last Recently Used - wywalać te, które były najpóźniej użyte.
+  		\item LFU - Last Frequently Used - wywalić ten, który najrzadziej był używany.
+  		\item LFRU - kombinacje (np. liniowe)
+  		\item Cache (do optymalizacji SELECTION), różne typy, różne mechanizmy dla różnych cache
+  		\begin{itemize}
+  			\item Recycled - rzeczy związane z danymi operacyjnymi, często się zmieniające
+  			\item Permanent - słowniki kodów terytorialnych, kodów miast itp.
+  		\end{itemize}
+ 	\end{itemize}
+ 	
+  	\section*{Praca bez transakcji}
+  	Nietypowy tryb, co najwyżej do serwisu, w wyjątkowych okolicznościach, raczej niesotsowany obecnie.\\
+  	Komenda \emph{set recovery off} - tryb single user, powoduje odcięcie się od wszystkich.
+  	
+  	% ======================================================================
+  	% === BACKUPOWANIE BAZ DANYCH
+  	% ======================================================================
+  	\part*{Backupowanie baz danych}
+  	\section*{Backup online} \noindent 
+  	BACKUP {DATABASE, LOGS, SNAPSHOT} FROM \(<db>\) TO <dir> ON {CLIENT, SERVER}\\
+  	Może tworzyć, przenosić itd.
+  	Komenda SETLOGBACKUP ON sprawia, że nie kasuje logów.
+  	\begin{itemize}
+  		\item BACKUP DATABASE - baza i logi
+  		\item BACKUP LOGS - tylko logi
+  		\item BACKUP SNAPSHOT - backup bazy i logów tworzony gdy inni pracują. Stan bazy danych w chwili naciśnięcia, bez konieczności (...) innych użytkowników.
+	  	\begin{enumerate}
+	  		\item \textbf{BACKUP SNAPSHOT}\\
+	  		Można go robić gdy inni pracują. Robi backup chwilowy. W czasie backupu to co jest wykonywane na bieżąco jest w innym pliku składowane, a po backupie łączone.
+	  		\item \textbf{Incremental backup}\\
+	  		SET LOGBACKUP ON\\
+	  		BACKUP DATABASE\\
+	  		BACKUP LOGS
+	  	\end{enumerate}
+  	\end{itemize}
+  	\section*{Offline backups} \noindent 
+  	COPY ... (copy on server)\\
+  	SET NEXT LOG <n>\\
+  	\section*{Odtwarzanie} \noindent 
+  	RESTORE (DATABASE, LOGS, SNAPSHOT) FROM <db>  ON {CLIENT, SERVER} TO <dir>\\
+  	Odtwrza odpowiedni BACKUP ...\\
+  	ROLLFORWARD <db> TO {END, BACKUP, TIME <dt>}\\
+  	ROLLFORWARD <db> TO END\\
+  	ROLLFORWARD <db> TO CONTINUE
+  	\section*{Wywoływanie | ładowanie bazy danych} \noindent 
+  	UNLOAD DATABASE <file>\\
+  	UNLOAD COMPRESS DATABASE <file> ON SERVER LOG <logfile> (log - napisane gdzie się wywrócił)\\
+  	UNLOAD SQL <file> <table>\\
+  	UNLOAD SCHEMA <file>\\\\
+  	(tryb recovery off, tryb autocommiton)\\
+  	LOAD SQL <file>\\
+  	LOAD COMPRESS SQL <file> ON SERVER LOG <logfile>\\
+  	LOAD ASCII <file> <table>\\
+  	SET BULK ON; - dodatkowy tryb w wielu serwerach. Dotyczy tego jak wygląda komunikacja między klientem a serwerem. Inna organizacja cache, grupowanie ich, np. wiele insertów - przekazuje do bufora np. 20 insertów jednocześnie zamiast każdego osobno.\\
+  	LOCK DATABASE
+  	
+  	
+  	% ======================================================================
+  	% === Tablice systemowe
+  	% ======================================================================
+  	\part*{Tablice systemowe}
+  	\section*{O co chodzi?}
+  	\textbf{Metaschemat} - słownik bazy danych, samoopisująca się baza danych
+  	\section*{Tablice, kolumny, perspektywy}
+  	\begin{itemize}
+  		\item \textbf{SYSTABLES} - rowCount, pageCount, pageNumber - w miarę aktualne, ale raczej aktualizowane na żądanie
+  		\item \textbf{SYSCOLUMNS} - też dane statystyczne + średnia długość pola
+  		\item \textbf{SYSVIEWS}
+  	\end{itemize}
+  	\section*{Indeksy}
+  	\begin{itemize}
+  		\item \textbf{SYSINDEXES} - twórca, nazwa, tablica, unikalność, l. kolumn klucza, typ indeksu B+/ClusterHashed\\
+  		B+ : Wysokość drzewa, leaf count - liczba liści\\
+  		CH:  Primary Pages (w 1 uderzeniu, liczba stron właściwych); Overflow pages (liczba stron dodatkowych)
+  		\item \textbf{SYSKEYS} - Składowe klucze indeksów, statystyki
+  	\end{itemize}
+  	\section*{Poziomy bezpieczeństwa}
+  	\begin{itemize}
+  		\item \textbf{SYSADM} : singleton, może tworzyć userów
+  		\item \textbf{DBA} : mogą robić wszystko poza operacjami na użytkownikach (ich tworzenie i klasyfikacja)
+  		\item \textbf{RESOURCE} : może tworzyć własne obiekty, ma prawo do swoich obiektów
+  		\item \textbf{CONNECT} : może się połączyć, ale w wielu systemach baz danych nie może nic ponadto dopóki ktoś inny mu nie nada praw
+  	\end{itemize}
+  	\section*{Uprawnienia}
+  	\begin{itemize}
+  		\item \textbf{SYSUSERAUTH} - użytkownicy na poziomie bazy danych, typ użytkownika (patrz wyżej)
+  		\item \textbf{SYSABAUTH} - prawa użytkownika do wykonywanie operacji na tablicach i perspektywach (Select, Import, Update, U cols, Delete, Alter, INDeks)
+  		\item \textbf{SYSCOLAUTH} - prawa użytkownika do update poszczególnych kolumn tablic (column update privileges), podrzędny do SYSABAUTH
+  		\item \textbf{SYSSYNONYMS} - synonimy tablic, perspektyw, procedur bazy danych. Dzielimy je na:
+  		\begin{itemize}
+  			\item publiczne, jak np. SYSADM.pracownik
+  			\item niepubliczne, jak np. Rafał.pracownik as SYSADM.superpracownik, stosowane w celu bezpieczeństwa
+  		\end{itemize} i niepubliczne
+  		\item \textbf{SYSEXECUTEAUTH} - prawo do wykonywania procedur baz danych
+  		\begin{itemize}
+  			\item Z przywilejami twórcy (with creator privileges) - można zostać na chwilę rootem, np. SYSADM tworzy procedurę dla userów DBA
+  			\item Z przywilejami wykonawcy (with grantee privileges)
+  		\end{itemize}
+  	\end{itemize}
+  	\section*{Więzy integralności}
+  	\begin{itemize}
+  		\item \textbf{SYSPKCONSTRAINTS} - definicja klucza pierwotnego
+  		\item \textbf{SYSFKCONSTRAINTS} - definicja klucza obcego
+  		\item \textbf{SYSTABCONSTRAINTS} - zachowanie w układzie master-detail tables (ON DELETE: RESTRICT/CASCADE/SET NULL)
+  	\end{itemize}
+ 	\section*{Inne}
+  	API klient-serwer: CONNECT -> PREPARE -> EXECUTE -> FETCH -> DISCONNECT
+  	\begin{itemize}
+	  	\item \textbf{SYSCOMMANDS} - nazwa, uchwyt, treść, znaczniki, procedury
+	  	\begin{itemize}
+	  		\item stored command, już skompilowana komenda (raz wykonany plan zapytania). Wada: plan jednorazowy, a przecież stan bazy danych się zmienia, brak automatyzacji.
+	  		\item procedury: static (prekompilowane, szybkie, ale z powyższą wadą), dynamic (tylko kod)
+	  	\end{itemize}
+	  	\item \textbf{SYSEXTFUN} - external functions. Umożliwia napisanie DLLki np. w C i dodawanie potem procedur
+	  	\item \textbf{SYSTRIGGERS}
+	  	\item \textbf{SYSEVENTS} - serwer czasu (~ scheduler, cron), umożliwia wykonywania pewnych czynności o określonych porach, np. wyładowanie/załadowanie bazy danych, odświeżania statystyk, czynności maintenance
+  	\end{itemize}
+  	
+  	% ======================================================================
+  	% === REALIZACJA ZAPYTAŃ PO STRONIE SERWERA
+  	% ======================================================================
+  	\part*{Realizacja zapytań po stronie serwera}
+  	W dzisiejszych czasach wykorzystuje się ODBC, ADO.NET.
+  	\section*{Fazy wykonywania SQL API}
+  	\begin{itemize}
+  		\item sql connect (con)
+  		\item sql prepare (prep)
+  		\item sql execute (exe)
+  		\item sql fetch
+  		\item sql commit
+  		\item sql disconnect
+  	\end{itemize}
+  	
+  	\subsection*{sqlConnect} \noindent 
+  	Baza, user, pass\\
+  	Returns kursor.\\
+  	Można działać na kilku kursorach, ale w obrębie tej samej transakcji. \emph{nie jestem pewien}
+  	\subsection*{sqlPrepare} \noindent 
+  	Zapytanie + parametry (bind\_var - np. war selekcji; into\_var - do pobierania)\\
+  	Zmienne z ":"\\
+  	Przesłanie komendy, analiza syntaktyczna i semantyczna, sprawdzenie uprawnień, podstawienia, optymalizacja
+  	\subsection*{sqlExecute} \noindent 
+  	Wysłanie zmiennych wiązanych (bind\_var), wykonanie komendy (result set)\\
+  	Blokady przy modyfikacji
+  	\subsection*{sqlFetchNext} \noindent 
+  	Pobranie wiersza, (zmienne into\_var)
+  	\subsection*{sqlDisconnect} \noindent 
+  	Odłączenie kursora
+  	\subsection*{sqlCommit} \noindent 
+  	Dla modyfikacji. Kilka kursorów, w jednej puli, commit commituje na wszystkich kursorach w puli.
+  	\subsection*{sqlPrepareAndExecute} \noindent 
+  	2 w 1
+  	\subsection*{sqlImmediate} \noindent 
+  	Sama komenda, nie ma kursora (sqlHandle), wszystko razem (connect, prepare, execute, fetch - sam sobie zarządza).\\ Wykonuje się na ostatnio użytym kursorze (ten sam user, hasło, baza danych)
+  	
+  	
+  	% ======================================================================
+  	% *** OPTYMALIZACJA *************************
+  	% ======================================================================
+  	\part*{Optymalizacja}
+  	\section*{PREPARE}
+  	3 sposoby szacowania sposobów zapytania
+  	\begin{itemize}
+  		\item \textbf{Selektywność zapytań} (selectivity factor) - parametr, który szacuje wynik zapytania, czyli jaki procent wierszy spełnia warunki zapytania, wartość <0, 1> - prawdopodobieństwo, że losowo wyciągnięty wiersz z tablicy spełnia warunki zapytania.\\
+  		Statystyki, do szacowania zapytań.\
+  		\begin{itemize}
+  			\item \textbf{Histogramy} (nieparametryczny estymator funkcji gęstości)
+  			\begin{itemize}
+  				\item O niskiej rozdzielczości i stałej szerokości
+  				\item Problem rozdzielczości i aktualności histogramu (UPDATE STATISTICS)
+  				\item Przykład:\\
+	  				\begin{tabular}{c|c|c|c|c|c}
+	  					\hline
+	  					0-10 & 10-20 & 20-30 & 30-40 & 40-50 & 50-60\\
+	  					\hline
+	  					\(\frac{1}{7}\) & \(\frac{1}{7}\) & \(\frac{2}{7}\) & \(\frac{2}{7}\) & \(\frac{1}{7}\) & \(\frac{1}{7}\)\\
+	  					\hline
+	  				\end{tabular}\\\\
+	  				\(sel(20 < x < 30)=\frac{2}{7}\)\\
+	  				\(sel(20 < x < 40)=\frac{4}{7}\)\\
+	  				\(sel(15 < x < 30)=\frac{1}{2}\times \frac{1}{7}+\frac{2}{7}\)\\ - zakładamy, że rozkład w 10 < x < 20 jest stały.
+  			\end{itemize}
+  			\item \textbf{Kardynalność} (\textit{cardinality}) - liczba unikalnych wartości kolumny w tablicy\\
+  			\textbf{selectivity factor} = \(\frac{1}{Cardinality}\) - dokładne dla unikalnych kolumn\\\\
+  			\(Card(x)<->sel(x='val')=\frac{1}{Card(x)}\)
+  			\item \textbf{Trzeci sposób} - płytkie wejście w drzewo indeksowe (\textit{b-tree scan})
+  			\begin{itemize}
+  				\item Gdy trafi granica w klucz to ok. Niejako spełnia rolę histogramu
+  				\item Założenie że node równomiernie dzieli dziedzinę
+  				\item Metoda najmniej dokładna i najmniej kosztowna
+  				\item Przy złożonym warunkiem zapytania: mnożenie (założenie o niezależności wartości atrybutów, reguła AVI)
+  			\end{itemize}
+  			\textbf{Przykład - do uzupełnienia.}
+		\end{itemize}
+  	\end{itemize}
+  	
+  	
   	
   	% ======================================================================
   	% === POZIOMY IZOLACJI
@@ -268,6 +616,8 @@
   			\centerline{\emph{SET ISOLATION RL}}
   		\end{itemize}
   	\end{itemize}
+  	
+  	
   	
   	
   	% ======================================================================
@@ -556,6 +906,7 @@
   	\begin{itemize}
   		\item Konkretne tablice
   		\item Migracja kluczy obcych
+  		\item Brak modelu M:N - powstaje dodatkowa tablica łączna
   		\item Identyfikatory zgodne z konkretnym serwerem
   	\end{itemize}
   	
