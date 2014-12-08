@@ -8,6 +8,8 @@
   
   \usepackage[unicode, bookmarks=true]{hyperref} %do zakładek
   
+  \graphicspath{ {./images/} }
+  
   \setlength{\textheight}{24cm}
   \setlength{\textwidth}{15.92cm}
   \setlength{\footskip}{10mm}
@@ -534,7 +536,140 @@
 		\end{itemize}
   	\end{itemize}
   	
+  	\section*{Optymalizacja zapytań} \noindent 
+  	\subsection*{select nazwisko from pracownik where nrp in (6,7,8)} 
+  	Istnieje pracownik o nrp = 6\\
+  	\includegraphics[width=10cm]{be}\\
+  	\textbf{Gdzie}:
+  	\begin{itemize}
+  		\item Liść to strona, która zawiera wiersze
+  		\item Idea działania jest taka sama jak drzewa wyważonego
+  	\end{itemize}
+  	\subsubsection*{Jak serwer realizowałby zapytanie?}
+  	\begin{enumerate}
+  		\item \textbf{Założenia}
+  		\begin{itemize}
+  			\item Page Count, \(PC = 1000\)
+  			\item Row Count, \(RC = 10000\) - przybliżona liczba wierszy
+  			\item \(\frac{RC}{PC} ~= 10\)
+  			\item H - wysokość drzewa
+  			\item L - leaf count, liczba liści
+  		\end{itemize}
+  		\item \textbf{Metoda}
+  		\begin{itemize}
+  			\item Oszacowanie kosztu dla nrp = 6\\
+  			\((H - 1) + 1\)\\
+  			Minus jeden wynika stąd, że korzeń jest już w pamięci.
+  			\item 	Oszacowanie kosztu dla nrp in (6, 7, 8)\\\\
+  			\(sel(nrp = 6) = \frac{1}{10000}\) (cardinality)\\\\
+  			\(sel(nrp in (6,7,8)) = \frac{3}{10000}\) (cardinality)\\\\
+  			\(sel\times{RC}=\frac{3}{10000}\times{10000}=3\)\\\\
+  			Przejście 3 razy: \(((H-1)+1)\times{sel\times{RC}}\) - koszt
+  		\end{itemize}
+  		\item \textbf{Przykład}\\
+  		H = 4\\
+  		Koszt: \(3\times((4-1)+1) = 12\) - liczba stron potrzebna do ściągnięcia.
+  		\item \textbf{Porównanie}
+  		\(12 < 1000 (PC)\)\\
+  		Lepiej w oparciu o indeks niż przeglądać strony.
+  	\end{enumerate}
   	
+  	
+  	\subsection*{select nazwisko from pracownik where nrp \(>=\) 6} \noindent 
+  	Przeszukiwanie liści, ale nie \(L\), a \(sel\times L\) liści zostanie przejrzane. Najpierw skacze do 6, a potem w prawo. Korzysta z listy liści.\\\\
+  	Dla \(6 <= nrp < 14\) przechodzi tylko tyle liści, żeby warunek był spełniony.\\
+  	Dla małego sel nadal się opłaca:\\
+  	\(koszt = (H-1)+sel\times L + sel \times RC\) - wyskakiwanie po wiersze. $  sel \times RC\ $ - liczba wyjść do stron.
+  	
+  	\subsection*{select nazwisko from pracownik order by nrp} \noindent 
+  	\(sel = 1\)\\
+  	Koszt: \((H-1)+L+RC\)
+  	
+  	\subsection*{select nazwisko from pracownik order by nrp where 6 $ <= $ nrp $ < $ 14} \noindent 
+  	Tak samo jak \textbf{select nazwisko from pracownik where nrp $ >= $ 6}, ponieważ są już uporządkowane.
+  	
+  	\subsection*{select nrp from pracownik where  6 $ <= $ nrp $ < $ 14 order by nrp}
+  	Najszybszy i najefektywniejszy rodzaj zapytania.\\
+  	Zapytanie \textbf{INDEX ONLY} - nie trzeba sięgać do tablic, bo wszystko siedzi w liściach drzewa.\\
+  	Koszt: \((H-1)+sel\times L\)\\ - zejście w dół + przejście po liściach.\\
+  	Nie należy go nadużywać, mogą wyniknąć problemy gdy indeks jest mało wykorzystywany, a wprowadza się dużo nowych danych.
+  	
+  	\subsection*{Indeks typu CLUTER HASHED}
+  	Strony typu \textit{primary pages} przy tworzeniu indeksu (w praktyce trochę większe, aby było lepiej) oraz Overflow pages.\\
+  	\begin{table}[h]
+  		\begin{tabular}{|c|lcll}
+  			\cline{1-1}
+  			\multicolumn{1}{|l|}{Primary pages (P)} &                                    & \multicolumn{1}{l}{Overflow pages (O)} &  &  \\ \cline{1-1} \cline{3-3}
+  			...                                     & \multicolumn{1}{l|}{-\textgreater} & \multicolumn{1}{c|}{...}               &  &  \\ \cline{1-1} \cline{3-3}
+  			...                                     &                                    &                                        &  &  \\ \cline{1-1} \cline{3-3}
+  			...                                     & \multicolumn{1}{l|}{-\textgreater} & \multicolumn{1}{c|}{...}               &  &  \\ \cline{1-1} \cline{3-3}
+  		\end{tabular}
+  	\end{table}
+  	Koszt $ = sel\times RC\times 1 = 1 $ przy nrp = 6.\\
+  	nrp in (6,7,8) - koszt $ = sel\times RC\times 1 = 3 $ - pesymistyczny przypadek, bo wszystkie mogą być na osobnych stronach.\\
+  	Ale to gdy nie trafi na overflow page.\\
+  	Stosunek: $ \frac{P+O}{P} $ - stosunek wszystkich stron przez primary pages. Początkowo równy jeden, gdy $ O = 0 $.\\
+  	Selektywność (koszt) zapytania: $ sel\times RC\times \frac{P+O}{P} $.\\
+  	Najpierw wyliczana selektywność, a potem koszt różnych sposobów.
+  	
+  	% ============================================================================
+  	% === SPOSOBY ŁĄCZENIA TABLIC
+  	% ============================================================================
+  	\section*{Sposoby łączenia tablic (nazwy)}
+  	\begin{itemize}
+  		\item \textbf{NESTED LOOP}\\
+  		najgorsza z możliwych metod. Fatalna złożoność obliczeniowa rzędu $ m \times n $\\
+  		\(m=1000\)\\\(n=1000\)\\\(n\times{m}=1000000\)
+  		\item \textbf{INDEX LOOP}\\
+  		Szukanie z indeksem. Łączymy, ale po tym co łączymy mamy indeks. Koszt: 
+  		\(m\times({h}+1)=m\times{(\log_d n+1)}\) - plus jeden, bo skok po wiersz.\\
+  		Dla d = 10 \(O=1000\times{(3+1)}=4000\). Gdzie:
+  		\begin{itemize}
+  			\item d - liczba wyprowadzeń z węzła
+  			\item H - wysokość drzewa
+  			\item n - liczba węzłów
+  			\item $ H=\log_d n $
+  		\end{itemize}
+  		Złożoność rzędu \((m\times\log{n})\)
+  		\item \textbf{SORT\_MERGE} (uporządkuj i scal)\\
+  		W przypadku pesymistycznym, dla dużych n i m, a nie można wykorzystać wielu indeksów.\\
+  		Złożoność \(m+n+m\log_2 m+n\log_2 n\)\\
+  		Gdzie:\\
+  		\(n+m\) - przejście raz po każdej tablicy (scalanie)\\
+  		\(m\log_2 m+n\log_2 n\) - sortowanie tablic\\
+  		Np. $ 1000 + 1000 + 1000\times10 + 1000\times10 = 22 000 $
+  		\item \textbf{HASH JOIN}\\
+  		Z indeksem Cluster Hashed\\
+  		Koszt: $ M\times1 $ (albo trochę więcej niż 1, jak 1,7).\\
+  		Niech częściowe wyniki złączeń są w hash join za kolejne łączenie.\\
+  		Można tablice tymczasowe (wyniki złączeń) jako cluster hashed i wtedy jest dobra do wykorzystania.
+  	\end{itemize}
+  	
+  	% ============================================================================
+  	% === AKTUALIZACJE TABLIC
+  	% ============================================================================
+  	\section*{Aktualizacje tablic w języku SQL} \noindent
+  	UPDATE STATISTICS ON DATABASE
+  	\begin{itemize}
+  		\item ON TABLE $ < $tabname$ > $
+  		\item ON INDEKX $ < $indeks$ > $
+  	\end{itemize}
+  	Aktualizuje parametry (-county), ale i też dane dla selektywności (histogram).\\
+  	\textbf{Inne możliwości}:
+  	\begin{itemize}
+  		\item ANALYZE TABLE ESTIMATE ... STATISTICS - np. 10\% - z 10-procentowej próbki.
+  	\end{itemize}
+  	
+	% ============================================================================
+	% === MECHANIZMY SERWERA BAZY DANYCH
+	% ============================================================================
+	\section*{Transakcyjne przetwarzanie} \noindent
+	Transakcje zaczynają się przy nadaniu poziomu izolacji (wyższych poziomów izolacji), ale można mówić, w uproszczeniu, że automatycznie przy instrukcji modyfikacji (INSERT, UPDATE, DELETE).
+	\begin{itemize}
+		\item SAVE POINT <nazwa> - takie podzielenie transakcji, chociażby na checkpointy (stany bazy danych), by można było się wycofać do tego savepointa.
+		\item ROLLBACK <nazwa> - rollback do wskazanego savepointa.
+		\item Savepointy żyją tak długo jak żyje transakcja.
+	\end{itemize}
   	
   	% ======================================================================
   	% === POZIOMY IZOLACJI
@@ -570,13 +705,16 @@
   	% --- poziomy izolacji
   	\section*{Poziomy izolacji}
   	\begin{itemize}
+  		\item \textbf{DR} (\emph{Dirty Read}) - można czytać zawsze i nie wiadomo co się czyta (np. widzi dane niezatwierdzone commitem).
   		\item \textbf{RO} (\emph{Read Only})
   		\begin{itemize}
   			\item Nie ma S-LOCKa.
-  			\item Tworzy się “select snapshot”.
-  			\item Odczytuje się dane spojne w danej chwil.
+  			\item Tworzy się “select snapshot” - obraz całej bazy danych z momentu połączenia.
+  			\item Odczytuje się dane spójne w danej chwil.
   			\item Innymi słowy - nie zakłada żadnych blokad, ale nie pozwala na modyfikacje.
   			\item Poziom przeznaczony do odczytów, które muszą zawierać dane z tej samej chwili.
+  			\item Rzadko wykorzystywany.
+  			\item Wada: wolne i nie można zrobić nic poza selectami.
   			\item Możliwość użycia tego trybu trzeba odblokować przez \emph{SET READONLY ON}
   			\item Przekazuje „migawkę" danych z chwili zadania zapytania.
   			\item Używa specjalnych plików .HIS do przechowywania migawki.
@@ -584,7 +722,7 @@
   		\item \textbf{RL} (\emph{Release Lock})
   		\begin{itemize}
   			\item Przeznaczony do odczytu
-  			\item Nie ma S-LOCKa, ale w praktyce DBMS zakłada go na chwilę, odczytuje spójne dane, a następnie zwalnia.
+  			\item Nie ma S-LOCKa, ale w praktyce DBMS zakłada go na chwilę, upewnia się, że nie ma X-LOCKa, odczytuje dane, a następnie zwalnia S-LOCK - gwarancja spójności danych.
   			\item Schemat działania:
   			\begin{itemize}
   				\item Wypełnia bufor wejściowy danymi.
@@ -592,32 +730,100 @@
   				\item Zwalnia blokadę natychmiast po zakończeniu operacji.
   			\end{itemize}
   			\item Zapewnia dobry wielodostęp.
+  			\item Nie można przeczytać czegoś co w danej chwili jest zmieniane.
   			\item Poziom przeznaczony do pokazywania wielu wierszy.
   		\end{itemize}
   		\item \textbf{CS} (\emph{Cursor Stability})
   		\begin{itemize}
   			\item Pobiera do bufora tylko pojedynczy wiersz.
-  			\item Blokowana jest tylko „bieżąca" strona - ta na której jest kursor.
+  			\item Blokowana jest tylko „bieżąca" strona - ta na której jest kursor (S-LOCK).
   			\item Blokada jest zdejmowana gdy kursor przejdzie na inną stronę.
-  			\item Dane między kolejnymi odczytami mogą być zmienione przez innych użytkowników.               \item Generuje duży ruch na sieci, ale nie blokuje dostępu innym.
+  			\item Dane między kolejnymi odczytami mogą być zmienione przez innych użytkowników - ryzyko wzajemnej blokady.
+  			\item Generuje duży ruch na sieci, ale nie blokuje dostępu innym.
   			\item Poziom przeznaczony do zmian pojedynczych wierszy.
-  			\item Wykorzystywane przy wybieraniu wierszy do modyfikacji ( użytkownik je sobie przegląda w aplikacji i wprowadza zmiany, a poźniej zapisuje ). S-LOCK, U-LOCK, X-LOCK.
+  			\item Wykorzystywane przy wybieraniu wierszy do modyfikacji ( użytkownik je sobie przegląda w aplikacji i wprowadza zmiany, a później zapisuje ). S-LOCK, U-LOCK, X-LOCK.
   			\item Składnia\\
-  			\centerline{\emph{SELECT ... FOR UPDATE dla UPDATE .... WHERE CURRENT OF CURSOR}}
+  			\centerline{\emph{SELECT ... FOR UPDATE dla UPDATE .... WHERE CURRENT OF CURSOR}} - pobranie z zamiarem zmiany, nałożenie U-LOCKa.
+  			\item Kursory mają timeouty.
+  			\item Niektóre serwery robią graf transakcji - wywalana transakcja która zamknęła graf albo ta o najmniejszym koszcie.
   		\end{itemize}
-  		\item \textbf{RR} (\emph{Read Repeatability (albo Repetable Read)})
+  		\item \textbf{RR} (\emph{Repetable Read})
   		\begin{itemize}
-  			\item Wypełnia bufor wejściowy danymi.
-  			\item Wszystkie przeczytane strony zostają zablokowane.
-  			\item Gwarantuje powtarzalność odczytów wiersza w ramach transakcji.
+  			\item Po to aby to co przeczytaliśmy nie zostało już zmienione w transakcji.
+  			\item S-LOCK utrzymywany na wierszach już dotkniętych. COMMIT lub ROLLBACK ściągają blokady.
+  			\item Nie chroni insertami (phantom row).
+  			\item Działanie:
+  			\begin{itemize}
+  				\item Wypełnia bufor wejściowy danymi.
+  				\item Wszystkie przeczytane strony zostają zablokowane.
+  				\item Gwarantuje powtarzalność odczytów wiersza w ramach transakcji.
+  			\end{itemize}
   			\item Jest to domyślny poziom izolacji.
   			\item Pełne blokowanie S-LOCK, U-LOCK, X-LOCK.
-  			\item Składnia\\
-  			\centerline{\emph{SET ISOLATION RL}}
+  			\item Składnia: {\emph{SET ISOLATION RL}}
+  		\end{itemize}
+  		\item \textbf{SE} (\emph{Serializable})
+  		\begin{itemize}
+  			\item Raz przeczytane to już nic się nie da zrobić, nawet dopisać.
+  			\item Chroni przed INSERTami.
+  			\item Zakłada blokadę na unikalny indeks z kluczem.
   		\end{itemize}
   	\end{itemize}
   	
   	
+  	% ======================================================================
+  	% === WIĘZY INTEGRALNOSCI
+  	% ======================================================================
+  	\part*{Więzy integralności}
+  	
+  	\section*{Skompilowane komendy (stored commands)}
+  	\begin{itemize}
+  		\item \textbf{SqlRetrieve} - dostejemy uchwyt i od razu tę komendę mamy.
+  		\item Retrieve, jak nie to Store, jak nie to Prepare
+  	\end{itemize}
+  	\section*{Procedury bazy danych (stored procedures)}
+  	\begin{itemize}
+  		\item Procedura może nawet "zastąpić" SELECT (udawać go)
+  		\item Dzielimy je na statyczne i dynamiczne (gdy zapytaniem jest np. zdanie SQL)
+  		\item Parametry - wejściowe lub wyjściowe, te drugie oznaczamy jako RECEIVE, przy pierwszych nic nie jest wymagane (chyba).
+  		\item Mają zmienne lokalne.
+  		\item Sekcje: on procedure startup / execute / fetch / close
+  		\item Może być fetchowalna - że można z niej fetch, fetch, fetch a potem daje EOF.
+  	\end{itemize}
+  	\section{Przykład}
+  	\textbf{procedures}\\
+  	type p1\\
+  	type p2\\
+  	receive type rp1\\
+  	receive type rp2 // do pobrania wyników\\
+  	receive type rp3\\\\
+  	\textbf{Komenda}:\\
+  	SELECT rp1, rp3\\
+  	FROM proc pp\\
+  	WHERE pp.p1 = zm AND pp.p2 = 7\\
+  	INTO :wyn1, :wyn2\\\\
+  	Procedura udaje tablicę - ON PROCEDUE FETCH - a każdym FETCHem da te wyniki (wyn1, wyn2).\\
+  	Jeśli nie chcemy procedury fetchowalnej to ON PPROCEDURE pomijamy.\\
+  	Jeżeli chcemy: ON PROCEDURE STARTUP - wykorzystany tylko raz na początku.
+  	
+  	
+ 	\section*{Mechanizmy wyzwalaczy (triggers)}
+  	Na tablicy/na perspektywnie/na bazie.\\
+  	Jest też trigger INSTEAD OF - wykona się trigger, nie odbędzie się operacja, która wywołała trigger
+  	ORDER number - kolejność różnych triggerów dla tego samego zdarzenia.\\
+  	\begin{itemize}
+	  	\item FOR EACH STATEMENT - jeśli np. dla update, wykona się raz na update
+	  	\item FOR EACH ROW - update na wielu wierszach - wywoła się dla każdego wiersza
+	  	\item Trigger BEFORE - w kontekście wykonania sprzed modyfikacji tablicy
+	  	\item AFTER - w kontekście wykonania po modyfikacji tablicy
+  	\end{itemize}
+  	[REFERENCING OLD AS alias1 NEW AS alias2]\\
+  	Można odczytywać wartości z wiersza sprzed i po modyfikacji dla update.\\\\
+  	Dziwne rzeczy, pobranie nazwy current usera do zmiennej: SELECT USER FROM systables WHERE tbname = 'SYSTABLES' INTO :strUser\\
+  	W Oraclu jest: select user from dual - zwraca 1 wiersz - nazwę usera\\
+  	Inne cuda: tworzenie identyfikatorów w oparciu o sekwencje - cuda wianki na kiju\\\\
+  	External procedures - kolejne cuda, jakieś windowsowe rzeczy\\
+  	Events - też cuda. Serwery mają coś takiego jak deamon czasu.
   	
   	
   	% ======================================================================
@@ -928,36 +1134,6 @@
   		\item Wstawianie jest szybsze dla cluster hashed.
   	\end{itemize}
   	
-  	% ============================================================================
-  	% === SPOSOBY ŁĄCZENIA TABLIC
-  	% ============================================================================
-  	\section*{Sposoby łączenia tablic (nazwy)}
-  	\begin{itemize}
-  		\item \textbf{NESTED LOOP}\\
-  		\(m=1000\)\\\(n=1000\)\\\(n\times{m}=1000000\)
-  		\item \textbf{INDEX LOOP}\\
-  		\(m\times({h}+1)=m\times{(logn+1)}=1000\times{(3+1)}=4000\)\\
-  		Złożonosć rzędu \((m\times\log{n})\)
-  		\item \textbf{SORT\_MERGE} (uporządkuj i scal)\\
-  		W przypadku pesymistycznym nie produkuje dużo indeksów (??)\\
-  		Złożonosć \(m+n+m\log_2 m+n\log_2 n\)\\
-  		Gdzie:\\
-  		\(n+m\) - przejscie raz po każdej tablicy\\
-  		\(m\log_2 m+n\log_2 n\) - sortowanie tablic
-  		\item \textbf{HASH JOIN}\\
-  		Z indeksem Cluster Hashed\\
-  		Niech częsciowe wyniki złączeń są w hash join za kolejne łączenie
-  	\end{itemize}
-  	
-  	% ============================================================================
-  	% === Parametry wyznaczane/aktualizowane w ramach realizacji UPDATE STATISTICS
-  	% ============================================================================
-  	\section*{Parametry wyznaczane/aktualizowane w ramach realizacji UPDATE STATISTICS}
-  	
-  	% ============================================================================
-  	% === Wymienić rodzaje stron bazy danych 
-  	% ============================================================================
-  	\section*{Wymienić rodzaje stron bazy danych}
   	
   	
   	%===============================================================================	
