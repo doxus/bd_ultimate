@@ -102,8 +102,8 @@
   	\begin{itemize}
   		\item \textbf{commit} \emph{zakończenie transakcji}
   		\item \textbf{rollback} \emph{zakończenie transakcji}
-  		\item \textbf{faza prepare następnego zapytania}
-  		\item \textbf{nowy connect na tym samym uchwycie} \emph{?? reconnect?}
+  		\item faza prepare następnego zapytania
+  		\item nowy connect na tym samym uchwycie
   	\end{itemize}
   	
   	% pytanie 10    
@@ -280,7 +280,7 @@
   		\item Transakcja 108 stop + data i czas
   	\end{itemize}
   	\subsection*{Zarządzanie logami}
-  	Kolejno tworzone są pliki: 1.log, 2.log itd. Pliki .log się wymieniają -> po utworzeniu 2.log, 1.log nie jest już potrzebne.
+  	Kolejno tworzone są pliki: 1.log, 2.log itd. Pliki .log się wymieniają -$ > $ po utworzeniu 2.log, 1.log nie jest już potrzebne.
   	\subsection*{Położenie logów}
   	Można plik bazy danych i log umieścić na osobnych dyskach - dane na STRIPE, log na MIRROR. Oba procesy nazywa się odpowiednio stripping oraz mirroringiem. Na STRIPE zapis jest buforowany, a na MIRROR niebuforowany (szybki, bezpieczny, ale zajmuje mało miejsca).
   	
@@ -298,7 +298,7 @@
   	Zrób jeszcze raz. Można restorenąć backup bazy danych.
   	\subsection*{Możliwości}
   	\begin{itemize}
-  		\item ROLLFORWAD TO END - ponowne wykonanie transakcji -> uzupełniona po ostatnią transakcję, która się skończyła (posiada znacznik końca).
+  		\item ROLLFORWAD TO END - ponowne wykonanie transakcji -$ > $ uzupełniona po ostatnią transakcję, która się skończyła (posiada znacznik końca).
   		\item ROLLFORWAD TO "DATETIME" - wszystkie transakcje której zakończyły się do pewnej godziny. Umożliwia zoptymalizowania backupowania, np. od poniedziałku do czwartku wykonywane są backupy logów (BACKUP LOG), a w piątki bazy danych (BACKUP DATA BASE). Muszą być wtedy backupy ze wszystkich dni, by przypadkiem któregoś nie zgubić.
   		\item ROLLFORWAD END - zakończenie rollforwardowania
   		\item ROLLFORWAD CONTINUE - po skończeniu kontynuacja rollforwardowania
@@ -359,7 +359,7 @@
   	% ======================================================================
   	\part*{Backupowanie baz danych}
   	\section*{Backup online} \noindent 
-  	BACKUP {DATABASE, LOGS, SNAPSHOT} FROM \(<db>\) TO <dir> ON {CLIENT, SERVER}\\
+  	BACKUP {DATABASE, LOGS, SNAPSHOT} FROM \(<db>\) TO $ < $dir$ > $ ON {CLIENT, SERVER}\\
   	Może tworzyć, przenosić itd.
   	Komenda SETLOGBACKUP ON sprawia, że nie kasuje logów.
   	\begin{itemize}
@@ -377,22 +377,22 @@
   	\end{itemize}
   	\section*{Offline backups} \noindent 
   	COPY ... (copy on server)\\
-  	SET NEXT LOG <n>\\
+  	SET NEXT LOG $ < $n$ > $\\
   	\section*{Odtwarzanie} \noindent 
-  	RESTORE (DATABASE, LOGS, SNAPSHOT) FROM <db>  ON {CLIENT, SERVER} TO <dir>\\
+  	RESTORE (DATABASE, LOGS, SNAPSHOT) FROM $ < $db$ > $  ON {CLIENT, SERVER} TO $ < $dir$ > $\\
   	Odtwrza odpowiedni BACKUP ...\\
-  	ROLLFORWARD <db> TO {END, BACKUP, TIME <dt>}\\
-  	ROLLFORWARD <db> TO END\\
-  	ROLLFORWARD <db> TO CONTINUE
+  	ROLLFORWARD $ < $db$ > $ TO {END, BACKUP, TIME $ < $dt$ > $}\\
+  	ROLLFORWARD $ < $db$ > $ TO END\\
+  	ROLLFORWARD $ < $db$ > $ TO CONTINUE
   	\section*{Wywoływanie | ładowanie bazy danych} \noindent 
-  	UNLOAD DATABASE <file>\\
-  	UNLOAD COMPRESS DATABASE <file> ON SERVER LOG <logfile> (log - napisane gdzie się wywrócił)\\
-  	UNLOAD SQL <file> <table>\\
-  	UNLOAD SCHEMA <file>\\\\
+  	UNLOAD DATABASE $ < $file$ > $\\
+  	UNLOAD COMPRESS DATABASE $ < $file$ > $ ON SERVER LOG $ < $logfile$ > $ (log - napisane gdzie się wywrócił)\\
+  	UNLOAD SQL $ < $file$ > $ $ < $table$ > $\\
+  	UNLOAD SCHEMA $ < $file$ > $\\\\
   	(tryb recovery off, tryb autocommiton)\\
-  	LOAD SQL <file>\\
-  	LOAD COMPRESS SQL <file> ON SERVER LOG <logfile>\\
-  	LOAD ASCII <file> <table>\\
+  	LOAD SQL $ < $file$ > $\\
+  	LOAD COMPRESS SQL $ < $file$ > $ ON SERVER LOG $ < $logfile$ > $\\
+  	LOAD ASCII $ < $file$ > $ $ < $table$ > $\\
   	SET BULK ON; - dodatkowy tryb w wielu serwerach. Dotyczy tego jak wygląda komunikacja między klientem a serwerem. Inna organizacja cache, grupowanie ich, np. wiele insertów - przekazuje do bufora np. 20 insertów jednocześnie zamiast każdego osobno.\\
   	LOCK DATABASE
   	
@@ -446,7 +446,7 @@
   		\item \textbf{SYSTABCONSTRAINTS} - zachowanie w układzie master-detail tables (ON DELETE: RESTRICT/CASCADE/SET NULL)
   	\end{itemize}
  	\section*{Inne}
-  	API klient-serwer: CONNECT -> PREPARE -> EXECUTE -> FETCH -> DISCONNECT
+  	API klient-serwer: CONNECT -$ > $ PREPARE -$ > $ EXECUTE -$ > $ FETCH -$ > $ DISCONNECT
   	\begin{itemize}
 	  	\item \textbf{SYSCOMMANDS} - nazwa, uchwyt, treść, znaczniki, procedury
 	  	\begin{itemize}
@@ -503,7 +503,7 @@
   	\section*{PREPARE}
   	3 sposoby szacowania sposobów zapytania
   	\begin{itemize}
-  		\item \textbf{Selektywność zapytań} (selectivity factor) - parametr, który szacuje wynik zapytania, czyli jaki procent wierszy spełnia warunki zapytania, wartość <0, 1> - prawdopodobieństwo, że losowo wyciągnięty wiersz z tablicy spełnia warunki zapytania.\\
+  		\item \textbf{Selektywność zapytań} (selectivity factor) - parametr, który szacuje wynik zapytania, czyli jaki procent wierszy spełnia warunki zapytania, wartość $ < $0, 1$ > $ - prawdopodobieństwo, że losowo wyciągnięty wiersz z tablicy spełnia warunki zapytania.\\
   		Statystyki, do szacowania zapytań.\
   		\begin{itemize}
   			\item \textbf{Histogramy} (nieparametryczny estymator funkcji gęstości)
@@ -520,7 +520,7 @@
 	  				\end{tabular}\\\\
 	  				\(sel(20 < x < 30)=\frac{2}{7}\)\\
 	  				\(sel(20 < x < 40)=\frac{4}{7}\)\\
-	  				\(sel(15 < x < 30)=\frac{1}{2}\times \frac{1}{7}+\frac{2}{7}\)\\ - zakładamy, że rozkład w 10 < x < 20 jest stały.
+	  				\(sel(15 < x < 30)=\frac{1}{2}\times \frac{1}{7}+\frac{2}{7}\)\\ - zakładamy, że rozkład w 10 $ < $ x $ < $ 20 jest stały.
   			\end{itemize}
   			\item \textbf{Kardynalność} (\textit{cardinality}) - liczba unikalnych wartości kolumny w tablicy\\
   			\textbf{selectivity factor} = \(\frac{1}{Cardinality}\) - dokładne dla unikalnych kolumn\\\\
@@ -539,7 +539,7 @@
   	\section*{Optymalizacja zapytań} \noindent 
   	\subsection*{select nazwisko from pracownik where nrp in (6,7,8)} 
   	Istnieje pracownik o nrp = 6\\
-  	\includegraphics[width=10cm]{be}\\
+  	%\includegraphics[width=10cm]{be}\\
   	\textbf{Gdzie}:
   	\begin{itemize}
   		\item Liść to strona, która zawiera wiersze
@@ -666,8 +666,8 @@
 	\section*{Transakcyjne przetwarzanie} \noindent
 	Transakcje zaczynają się przy nadaniu poziomu izolacji (wyższych poziomów izolacji), ale można mówić, w uproszczeniu, że automatycznie przy instrukcji modyfikacji (INSERT, UPDATE, DELETE).
 	\begin{itemize}
-		\item SAVE POINT <nazwa> - takie podzielenie transakcji, chociażby na checkpointy (stany bazy danych), by można było się wycofać do tego savepointa.
-		\item ROLLBACK <nazwa> - rollback do wskazanego savepointa.
+		\item SAVE POINT $ < $nazwa$ > $ - takie podzielenie transakcji, chociażby na checkpointy (stany bazy danych), by można było się wycofać do tego savepointa.
+		\item ROLLBACK $ < $nazwa$ > $ - rollback do wskazanego savepointa.
 		\item Savepointy żyją tak długo jak żyje transakcja.
 	\end{itemize}
   	
@@ -1005,10 +1005,10 @@
   		\item Sposoby nadawania uprawnień do obiektów:
   		\begin{itemize}
   			\item \textbf{Poziom baz danych}\\
-  			GRANT CONNECT TO <\emph{ids}> IDENTIFIED BY <\emph{pass}>\\
-  			GRANT {RESOURCE, DBA} TO <\emph{ids}>\\
+  			GRANT CONNECT TO $ < $\emph{ids}$ > $ IDENTIFIED BY $ < $\emph{pass}$ > $\\
+  			GRANT {RESOURCE, DBA} TO $ < $\emph{ids}$ > $\\
   			REVOKE {CONNECT, 
-  				RESOURCE, DBA} FROM  <\emph{ids}>\\\\
+  				RESOURCE, DBA} FROM  $ < $\emph{ids}$ > $\\\\
   			\textbf{Wynik:}\\
   			\begin{tabular}{|l|l|}
   				\hline
@@ -1022,11 +1022,11 @@
   				\hline
   			\end{tabular}\\
   			\item \textbf{Poziom tablic i perspektyw}\\
-  			GRANT  <priv> ON <tab/view> TO {<ids>, PUBLIC}\\
-  			REVOKE <priv> ON <tab/view> FROM {<ids>, PUBLIC}\\\\
+  			GRANT  $ < $priv$ > $ ON $ < $tab/view$ > $ TO {$ < $ids$ > $, PUBLIC}\\
+  			REVOKE $ < $priv$ > $ ON $ < $tab/view$ > $ FROM {$ < $ids$ > $, PUBLIC}\\\\
   			\textbf{Wynik:}\\
   			\begin{tabular}{|l|l|}
-  				\hline \textbf{<priv>}\\
+  				\hline \textbf{$ < $priv$ > $}\\
   				\hline ALL\\
   				\hline \textbf{SELECT}\\
   				\hline \textbf{INSERT}\\
@@ -1125,12 +1125,12 @@
   		\item \textbf{B+Tree} - dostęp przez drzewo indeksowe zrównoważone, liczba wyprowadzeń z liści nie jest stała
   		\item \textbf{Selekcja przez indeks} - ${h+1}$ odwołań
   		\item \textbf{Cluster hashed} - specyficzny sposób rozmieszczenia rekordów, przy tworzeniu tabeli podaje się liczbę wierszy w tabeli, przy 1.  insercie alokacja pustych stron w 1 kawałku
-  		\item Np. RCNT 1000 -> 10 (liczba wierszy na stronie) -> PCNT 100
+  		\item Np. RCNT 1000 -$ > $ 10 (liczba wierszy na stronie) -$ > $ PCNT 100
   	\end{itemize}
   	\subsection*{Pozostałe}
   	\begin{itemize}
   		\item Działanie optymalizatora "wybierającego" metodę dostępu na podstawie postaci predykatu w WHERE
-  		\item Dla predykatu wycinającego ileś wierszy (np. Typu “<” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z rozwiązaniami).
+  		\item Dla predykatu wycinającego ileś wierszy (np. Typu “$ < $” albo between) wybiera się index B+ jesli istnieje, bo jest szybszy (wchodzi się “do liści” i wycina odpowiednie poddrzewo z rozwiązaniami).
   		\item Wstawianie jest szybsze dla cluster hashed.
   	\end{itemize}
   	
